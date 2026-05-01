@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+dist/
+
+.env
+.env.local
+
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+npm-debug.log*
