@@ -137,75 +137,39 @@ export function searchCompanies(query: string, options: CompanySearchOptions = {
       };
     }
 
-    const whereClause = `
-      WHERE (c.normalized_name LIKE ? OR c.name LIKE ?)
-        AND (? IS NULL OR s.employee_count >= ?)
+    const matchedCompaniesCte = `
+      WITH matched_companies AS MATERIALIZED (
+        SELECT
+          id,
+          name,
+          industry,
+          address,
+          normalized_name
+        FROM companies c
+        WHERE (c.normalized_name LIKE ? OR c.name LIKE ?)
         ${regionClause}
+      )
     `;
-    const countParams = [normalizedQuery, `%${trimmedQuery}%`, minEmployees, minEmployees, ...regionParams];
-    const total = (
-      sqlite
-        .prepare(
-          `
-          SELECT COUNT(*) AS total
-          FROM companies c
-          LEFT JOIN company_snapshots s
-            ON s.id = (
-              SELECT s2.id
-              FROM company_snapshots s2
-              WHERE s2.company_id = c.id
-              ORDER BY s2.snapshot_month DESC, s2.id DESC
-              LIMIT 1
-            )
-          ${whereClause}
-        `
-        )
-        .get(...countParams) as { total: number }
-    ).total;
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-    if (options.countOnly) {
-      return {
-        results: [],
-        total,
-        page,
-        pageSize,
-        totalPages
-      };
-    }
-
-    const orderBy =
-      sort === "employees"
-        ? `
-          ORDER BY
-            CASE WHEN c.normalized_name = ? THEN 0 ELSE 1 END,
-            s.employee_count DESC,
-            s.snapshot_month DESC,
-            c.name ASC
-        `
-        : `
-          ORDER BY
-            CASE WHEN c.normalized_name = ? THEN 0 ELSE 1 END,
-            CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
-            CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
-            s.snapshot_month DESC,
-            c.name ASC
-        `;
-
-    const results = sqlite
-      .prepare(
-        `
+    const snapshotFilterClause = `
+      WHERE (? IS NULL OR s.employee_count >= ?)
+    `;
+    const matchedParams = [normalizedQuery, `%${trimmedQuery}%`, ...regionParams];
+    const snapshotFilterParams = [minEmployees, minEmployees];
+    const filteredCompaniesCte = `
+      ${matchedCompaniesCte},
+      filtered_companies AS MATERIALIZED (
         SELECT
           c.id,
           c.name,
           c.industry,
           c.address,
+          c.normalized_name,
           s.snapshot_month AS snapshotMonth,
           s.employee_count AS employeeCount,
           s.estimated_average_annual_salary AS estimatedAverageAnnualSalary,
           s.new_joiners AS newJoiners,
           s.departures
-        FROM companies c
+        FROM matched_companies c
         LEFT JOIN company_snapshots s
           ON s.id = (
             SELECT s2.id
@@ -214,25 +178,88 @@ export function searchCompanies(query: string, options: CompanySearchOptions = {
             ORDER BY s2.snapshot_month DESC, s2.id DESC
             LIMIT 1
           )
-        ${whereClause}
+        ${snapshotFilterClause}
+      )
+    `;
+
+    if (options.countOnly) {
+      const total = (
+        sqlite
+          .prepare(
+            `
+            ${filteredCompaniesCte}
+            SELECT COUNT(*) AS total
+            FROM filtered_companies
+          `
+          )
+          .get(...matchedParams, ...snapshotFilterParams) as { total: number }
+      ).total;
+
+      return {
+        results: [],
+        total,
+        page,
+        pageSize,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
+      };
+    }
+
+    const orderBy =
+      sort === "employees"
+        ? `
+          ORDER BY
+            CASE WHEN c.normalized_name = ? THEN 0 ELSE 1 END,
+            c.employeeCount DESC,
+            c.snapshotMonth DESC,
+            c.name ASC
+        `
+        : `
+          ORDER BY
+            CASE WHEN c.normalized_name = ? THEN 0 ELSE 1 END,
+            CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
+            CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
+            c.snapshotMonth DESC,
+            c.name ASC
+        `;
+
+    type SearchResultRow = CompanySearchResult & { total: number };
+    const rows = sqlite
+      .prepare(
+        `
+        ${filteredCompaniesCte}
+        SELECT
+          c.id,
+          c.name,
+          c.industry,
+          c.address,
+          c.snapshotMonth,
+          c.employeeCount,
+          c.estimatedAverageAnnualSalary,
+          c.newJoiners,
+          c.departures,
+          COUNT(*) OVER() AS total
+        FROM filtered_companies c
         ${orderBy}
         LIMIT ?
         OFFSET ?
       `
       )
       .all(
-        ...countParams,
+        ...matchedParams,
+        ...snapshotFilterParams,
         ...(sort === "employees"
           ? [normalizedExactQuery, pageSize, offset]
           : [normalizedExactQuery, normalizedCorporateQuery, normalizedPrefixQuery, pageSize, offset])
-      ) as CompanySearchResult[];
+      ) as SearchResultRow[];
+    const total = rows[0]?.total ?? 0;
+    const results = rows.map(({ total: _total, ...row }) => row);
 
     return {
       results,
       total,
       page,
       pageSize,
-      totalPages
+      totalPages: Math.max(1, Math.ceil(total / pageSize))
     };
   });
 }

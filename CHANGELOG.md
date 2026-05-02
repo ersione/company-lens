@@ -15,6 +15,7 @@
 - Added a large-result refinement prompt that asks users to narrow broad searches before loading result rows.
 - Added a search pending state for button clicks and Enter-key submissions.
 - Added a latest-snapshot employee-count index for filtered search.
+- Added a latest-snapshot company/month/id index for faster filtered company searches.
 
 ### Changed
 
@@ -22,6 +23,9 @@
 - Optimized first-page access by avoiding initial recent-company queries.
 - Improved company detail layout and chart styling.
 - Improved broad-search behavior by doing a count-only lookup before loading results that will be hidden behind the refinement prompt.
+- Improved filtered search performance by narrowing company-name matches before joining latest snapshot data.
+- Improved filtered search response shape by returning result rows and total count from one query when results are shown.
+- Added a SQLite busy timeout to reduce transient lock failures during concurrent local reads and migrations.
 - Improved National Pension CSV import handling for CP949 files, verbose public-data column names, and duplicate source files.
 - Updated README with fresh checkout, data sync, local startup, and new monthly data instructions.
 - Updated implementation status documentation with the current loaded data range and verification commands.

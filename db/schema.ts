@@ -63,6 +63,7 @@ export const companySnapshots = sqliteTable(
       table.snapshotMonth,
       table.sourceFileId
     ),
+    companyMonthIdIdx: index("company_snapshots_company_month_id_idx").on(table.companyId, table.snapshotMonth, table.id),
     monthEmployeeIdx: index("company_snapshots_month_employee_idx").on(table.snapshotMonth, table.employeeCount)
   })
 );
