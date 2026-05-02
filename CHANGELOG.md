@@ -16,6 +16,7 @@
 - Added a search pending state for button clicks and Enter-key submissions.
 - Added a latest-snapshot employee-count index for filtered search.
 - Added a latest-snapshot company/month/id index for faster filtered company searches.
+- Added a SQLite FTS5 trigram company-name search index and rebuild command.
 
 ### Changed
 
@@ -24,6 +25,7 @@
 - Improved company detail layout and chart styling.
 - Improved broad-search behavior by doing a count-only lookup before loading results that will be hidden behind the refinement prompt.
 - Improved filtered search performance by narrowing company-name matches before joining latest snapshot data.
+- Improved Korean substring search and pagination performance by replacing broad `LIKE` scans with FTS-backed company-name matching.
 - Improved filtered search response shape by returning result rows and total count from one query when results are shown.
 - Added a SQLite busy timeout to reduce transient lock failures during concurrent local reads and migrations.
 - Improved National Pension CSV import handling for CP949 files, verbose public-data column names, and duplicate source files.
@@ -41,5 +43,6 @@
 
 - `npm run download:nps -- --from 2026-03 --to 2026-03`
 - `npm run sync:nps -- --from 2026-03 --to 2026-03`
+- `npm run rebuild:search-index`
 - `npm test`
 - `npm run build`

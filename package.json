@@ -10,6 +10,7 @@
     "lint": "next lint",
     "download:nps": "tsx scripts/download-nps.ts",
     "import:nps": "tsx scripts/import-nps.ts",
+    "rebuild:search-index": "tsx scripts/rebuild-company-search-index.ts",
     "sync:nps": "tsx scripts/sync-nps.ts",
     "test": "tsx --test tests/*.test.ts"
   },

@@ -15,6 +15,7 @@ The app does not ship with the generated SQLite database or raw CSV files. Those
 ## Current Features
 
 - Company-name search against local National Pension workplace data
+- SQLite FTS5 trigram index for fast Korean substring company-name search
 - Search pending state for button clicks and Enter-key submissions
 - Region, subscriber-count, and sort filters
 - 10-result pages with pagination
@@ -112,6 +113,14 @@ Sync only a range:
 ```bash
 npm run sync:nps -- --from 2026-03 --to 2026-03
 ```
+
+Rebuild the company-name search index for an existing SQLite database:
+
+```bash
+npm run rebuild:search-index
+```
+
+Fresh imports update the search index automatically. Use `rebuild:search-index` when opening an older local database created before the FTS search index existed.
 
 ## Adding A New Month
 

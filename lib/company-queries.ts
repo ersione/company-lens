@@ -94,7 +94,7 @@ export function searchCompanies(query: string, options: CompanySearchOptions = {
     const regionParams = regionPrefixes.map((prefix) => `${prefix}%`);
     const sort = options.sort ?? "relevance";
     const normalizedExactQuery = trimmedQuery.toLocaleLowerCase("ko-KR");
-    const normalizedQuery = `%${normalizedExactQuery}%`;
+    const ftsQuery = normalizedExactQuery.replace(/"/g, "\"\"");
     const normalizedCorporateQuery = `${normalizedExactQuery}(%`;
     const normalizedPrefixQuery = `${normalizedExactQuery}%`;
     if (!query.trim()) {
@@ -140,20 +140,21 @@ export function searchCompanies(query: string, options: CompanySearchOptions = {
     const matchedCompaniesCte = `
       WITH matched_companies AS MATERIALIZED (
         SELECT
-          id,
-          name,
-          industry,
-          address,
-          normalized_name
-        FROM companies c
-        WHERE (c.normalized_name LIKE ? OR c.name LIKE ?)
+          c.id,
+          c.name,
+          c.industry,
+          c.address,
+          c.normalized_name
+        FROM company_search_fts fts
+        JOIN companies c ON c.id = fts.rowid
+        WHERE company_search_fts MATCH ?
         ${regionClause}
       )
     `;
     const snapshotFilterClause = `
       WHERE (? IS NULL OR s.employee_count >= ?)
     `;
-    const matchedParams = [normalizedQuery, `%${trimmedQuery}%`, ...regionParams];
+    const matchedParams = [ftsQuery, ...regionParams];
     const snapshotFilterParams = [minEmployees, minEmployees];
     const filteredCompaniesCte = `
       ${matchedCompaniesCte},

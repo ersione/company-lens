@@ -62,5 +62,8 @@ export function migrate(sqlite: Database.Database) {
 
     CREATE INDEX IF NOT EXISTS companies_name_idx
       ON companies (normalized_name);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS company_search_fts
+      USING fts5(name, normalized_name, tokenize='trigram');
   `);
 }

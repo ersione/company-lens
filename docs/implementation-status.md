@@ -14,6 +14,7 @@ This repository now contains a working Company Lens MVP:
 - National Pension Service CSV import command at `scripts/import-nps.ts`.
 - National Pension Service source manifest at `config/nps-source-manifest.json`.
 - National Pension Service download/sync commands at `scripts/download-nps.ts` and `scripts/sync-nps.ts`.
+- SQLite FTS5 trigram company-name search index with rebuild command at `scripts/rebuild-company-search-index.ts`.
 - Korean-first search page at `/`.
 - Company detail page at `/companies/[id]`.
 - Recharts-based company trend charts for subscriber count, estimated annual salary, estimated monthly salary, new joiners, and departures.
@@ -83,6 +84,12 @@ Download all manifest entries and import anything not already loaded:
 npm run sync:nps
 ```
 
+Rebuild the company-name search index for an existing local database:
+
+```bash
+npm run rebuild:search-index
+```
+
 The committed manifest stores public source metadata and file download URLs. The large raw CSV files and generated SQLite database remain local-only under `data/`.
 
 The importer validates these required 국민연금 columns:
@@ -123,6 +130,7 @@ npm install
 npm test
 npm run build
 npm audit --omit=dev
+npm run rebuild:search-index
 ```
 
 Browser smoke verification was also run against the local development server:

@@ -328,6 +328,17 @@ export async function importNpsCsv(filePath: string, client: ReturnType<typeof c
     `
     );
 
+    const upsertSearchIndex = client.sqlite.prepare(
+      `
+      INSERT OR REPLACE INTO company_search_fts (
+        rowid,
+        name,
+        normalized_name
+      )
+      VALUES (?, ?, ?)
+    `
+    );
+
     let companyCount = 0;
     let snapshotCount = 0;
 
@@ -346,6 +357,8 @@ export async function importNpsCsv(filePath: string, client: ReturnType<typeof c
       ) as { id: number };
 
       companyCount += 1;
+
+      upsertSearchIndex.run(company.id, row.name, row.normalizedName);
 
       upsertSnapshot.run(
         company.id,
