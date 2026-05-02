@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const sourceFiles = sqliteTable(
   "source_files",
@@ -62,7 +62,8 @@ export const companySnapshots = sqliteTable(
       table.companyId,
       table.snapshotMonth,
       table.sourceFileId
-    )
+    ),
+    monthEmployeeIdx: index("company_snapshots_month_employee_idx").on(table.snapshotMonth, table.employeeCount)
   })
 );
 

@@ -54,6 +54,9 @@ export function migrate(sqlite: Database.Database) {
     CREATE INDEX IF NOT EXISTS company_snapshots_company_month_idx
       ON company_snapshots (company_id, snapshot_month DESC);
 
+    CREATE INDEX IF NOT EXISTS company_snapshots_month_employee_idx
+      ON company_snapshots (snapshot_month DESC, employee_count DESC);
+
     CREATE INDEX IF NOT EXISTS companies_name_idx
       ON companies (normalized_name);
   `);

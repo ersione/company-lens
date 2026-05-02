@@ -12,6 +12,15 @@ The app does not ship with the generated SQLite database or raw CSV files. Those
 - SQLite through `better-sqlite3`
 - Recharts
 
+## Current Features
+
+- Company-name search against local National Pension workplace data
+- Search pending state for button clicks and Enter-key submissions
+- Region, subscriber-count, and sort filters
+- 10-result pages with pagination
+- Large-result refinement prompt before loading long result lists
+- Company detail trend charts for subscribers, estimated salary, new joiners, and departures
+
 ## Fresh Checkout Setup
 
 Install dependencies:

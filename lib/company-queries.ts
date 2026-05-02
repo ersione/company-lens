@@ -13,6 +13,23 @@ export type CompanySearchResult = {
   departures: number | null;
 };
 
+export type CompanySearchOptions = {
+  limit?: number;
+  page?: number;
+  countOnly?: boolean;
+  minEmployees?: number | null;
+  region?: string | null;
+  sort?: "relevance" | "employees";
+};
+
+export type CompanySearchResponse = {
+  results: CompanySearchResult[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export type CompanyDetail = CompanySearchResult & {
   registrationNumber: string | null;
   roadAddress: string | null;
@@ -32,6 +49,26 @@ export type SnapshotHistory = {
   departures: number | null;
 };
 
+const regionAddressPrefixes: Record<string, string[]> = {
+  "서울특별시": ["서울특별시"],
+  "부산광역시": ["부산광역시"],
+  "대구광역시": ["대구광역시"],
+  "인천광역시": ["인천광역시"],
+  "광주광역시": ["광주광역시"],
+  "대전광역시": ["대전광역시"],
+  "울산광역시": ["울산광역시"],
+  "세종특별자치시": ["세종특별자치시"],
+  "경기도": ["경기도"],
+  "강원특별자치도": ["강원특별자치도", "강원도"],
+  "충청북도": ["충청북도"],
+  "충청남도": ["충청남도"],
+  "전북특별자치도": ["전북특별자치도", "전라북도"],
+  "전라남도": ["전라남도"],
+  "경상북도": ["경상북도"],
+  "경상남도": ["경상남도"],
+  "제주특별자치도": ["제주특별자치도"]
+};
+
 function withDatabase<T>(callback: (sqlite: ReturnType<typeof createDb>["sqlite"]) => T) {
   const client = createDb();
   try {
@@ -42,15 +79,26 @@ function withDatabase<T>(callback: (sqlite: ReturnType<typeof createDb>["sqlite"
   }
 }
 
-export function searchCompanies(query: string, limit = 20) {
+export function searchCompanies(query: string, options: CompanySearchOptions = {}): CompanySearchResponse {
   return withDatabase((sqlite) => {
     const trimmedQuery = query.trim();
+    const pageSize = Math.max(1, Math.min(options.limit ?? 10, 100));
+    const page = Math.max(1, options.page ?? 1);
+    const offset = (page - 1) * pageSize;
+    const minEmployees = options.minEmployees ?? null;
+    const regionPrefixes = options.region ? (regionAddressPrefixes[options.region] ?? []) : [];
+    const regionClause =
+      regionPrefixes.length > 0
+        ? `AND (${regionPrefixes.map(() => "c.address LIKE ?").join(" OR ")})`
+        : "";
+    const regionParams = regionPrefixes.map((prefix) => `${prefix}%`);
+    const sort = options.sort ?? "relevance";
     const normalizedExactQuery = trimmedQuery.toLocaleLowerCase("ko-KR");
     const normalizedQuery = `%${normalizedExactQuery}%`;
     const normalizedCorporateQuery = `${normalizedExactQuery}(%`;
     const normalizedPrefixQuery = `${normalizedExactQuery}%`;
     if (!query.trim()) {
-      return sqlite
+      const results = sqlite
         .prepare(
           `
           SELECT
@@ -72,14 +120,79 @@ export function searchCompanies(query: string, limit = 20) {
               ORDER BY s2.snapshot_month DESC, s2.id DESC
               LIMIT 1
             )
+          WHERE (? IS NULL OR s.employee_count >= ?)
+            ${regionClause}
           ORDER BY s.snapshot_month DESC, c.name ASC
           LIMIT ?
         `
         )
-        .all(limit) as CompanySearchResult[];
+        .all(minEmployees, minEmployees, ...regionParams, pageSize) as CompanySearchResult[];
+
+      return {
+        results,
+        total: results.length,
+        page: 1,
+        pageSize,
+        totalPages: 1
+      };
     }
 
-    return sqlite
+    const whereClause = `
+      WHERE (c.normalized_name LIKE ? OR c.name LIKE ?)
+        AND (? IS NULL OR s.employee_count >= ?)
+        ${regionClause}
+    `;
+    const countParams = [normalizedQuery, `%${trimmedQuery}%`, minEmployees, minEmployees, ...regionParams];
+    const total = (
+      sqlite
+        .prepare(
+          `
+          SELECT COUNT(*) AS total
+          FROM companies c
+          LEFT JOIN company_snapshots s
+            ON s.id = (
+              SELECT s2.id
+              FROM company_snapshots s2
+              WHERE s2.company_id = c.id
+              ORDER BY s2.snapshot_month DESC, s2.id DESC
+              LIMIT 1
+            )
+          ${whereClause}
+        `
+        )
+        .get(...countParams) as { total: number }
+    ).total;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    if (options.countOnly) {
+      return {
+        results: [],
+        total,
+        page,
+        pageSize,
+        totalPages
+      };
+    }
+
+    const orderBy =
+      sort === "employees"
+        ? `
+          ORDER BY
+            CASE WHEN c.normalized_name = ? THEN 0 ELSE 1 END,
+            s.employee_count DESC,
+            s.snapshot_month DESC,
+            c.name ASC
+        `
+        : `
+          ORDER BY
+            CASE WHEN c.normalized_name = ? THEN 0 ELSE 1 END,
+            CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
+            CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
+            s.snapshot_month DESC,
+            c.name ASC
+        `;
+
+    const results = sqlite
       .prepare(
         `
         SELECT
@@ -101,18 +214,26 @@ export function searchCompanies(query: string, limit = 20) {
             ORDER BY s2.snapshot_month DESC, s2.id DESC
             LIMIT 1
           )
-        WHERE c.normalized_name LIKE ?
-           OR c.name LIKE ?
-        ORDER BY
-          CASE WHEN c.normalized_name = ? THEN 0 ELSE 1 END,
-          CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
-          CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
-          s.snapshot_month DESC,
-          c.name ASC
+        ${whereClause}
+        ${orderBy}
         LIMIT ?
+        OFFSET ?
       `
       )
-      .all(normalizedQuery, `%${trimmedQuery}%`, normalizedExactQuery, normalizedCorporateQuery, normalizedPrefixQuery, limit) as CompanySearchResult[];
+      .all(
+        ...countParams,
+        ...(sort === "employees"
+          ? [normalizedExactQuery, pageSize, offset]
+          : [normalizedExactQuery, normalizedCorporateQuery, normalizedPrefixQuery, pageSize, offset])
+      ) as CompanySearchResult[];
+
+    return {
+      results,
+      total,
+      page,
+      pageSize,
+      totalPages
+    };
   });
 }
 
