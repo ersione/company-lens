@@ -26,6 +26,7 @@ export type CompanyDetail = CompanySearchResult & {
 export type SnapshotHistory = {
   snapshotMonth: string;
   employeeCount: number | null;
+  estimatedAverageMonthlySalary: number | null;
   estimatedAverageAnnualSalary: number | null;
   newJoiners: number | null;
   departures: number | null;
@@ -43,7 +44,11 @@ function withDatabase<T>(callback: (sqlite: ReturnType<typeof createDb>["sqlite"
 
 export function searchCompanies(query: string, limit = 20) {
   return withDatabase((sqlite) => {
-    const normalizedQuery = `%${query.trim().toLocaleLowerCase("ko-KR")}%`;
+    const trimmedQuery = query.trim();
+    const normalizedExactQuery = trimmedQuery.toLocaleLowerCase("ko-KR");
+    const normalizedQuery = `%${normalizedExactQuery}%`;
+    const normalizedCorporateQuery = `${normalizedExactQuery}(%`;
+    const normalizedPrefixQuery = `${normalizedExactQuery}%`;
     if (!query.trim()) {
       return sqlite
         .prepare(
@@ -98,15 +103,16 @@ export function searchCompanies(query: string, limit = 20) {
           )
         WHERE c.normalized_name LIKE ?
            OR c.name LIKE ?
-           OR c.registration_number LIKE ?
         ORDER BY
           CASE WHEN c.normalized_name = ? THEN 0 ELSE 1 END,
+          CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
+          CASE WHEN c.normalized_name LIKE ? THEN 0 ELSE 1 END,
           s.snapshot_month DESC,
           c.name ASC
         LIMIT ?
       `
       )
-      .all(normalizedQuery, `%${query.trim()}%`, `%${query.replace(/\D/g, "")}%`, query.trim().toLocaleLowerCase("ko-KR"), limit) as CompanySearchResult[];
+      .all(normalizedQuery, `%${trimmedQuery}%`, normalizedExactQuery, normalizedCorporateQuery, normalizedPrefixQuery, limit) as CompanySearchResult[];
   });
 }
 
@@ -157,13 +163,13 @@ export function getCompanyHistory(id: number) {
         SELECT
           snapshot_month AS snapshotMonth,
           employee_count AS employeeCount,
+          estimated_average_monthly_salary AS estimatedAverageMonthlySalary,
           estimated_average_annual_salary AS estimatedAverageAnnualSalary,
           new_joiners AS newJoiners,
           departures
         FROM company_snapshots
         WHERE company_id = ?
         ORDER BY snapshot_month DESC, id DESC
-        LIMIT 24
       `
       )
       .all(id) as SnapshotHistory[];

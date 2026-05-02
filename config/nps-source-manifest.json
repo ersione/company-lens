@@ -1,0 +1,301 @@
+{
+  "sources": [
+    {
+      "snapshotMonth": "2024-01",
+      "publicDataDetailPk": "uddi:c70b85ac-0146-41a9-8f4a-d2acafaa3c92",
+      "publicDataHistSn": "3",
+      "publishedDate": "2024-02-19",
+      "atchFileId": "FILE_000000002879712",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-01.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000002879712&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-02",
+      "publicDataDetailPk": "uddi:67ccdcc5-727f-408d-802a-dce95772acb8",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-03-21",
+      "atchFileId": "FILE_000000002892162",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-02.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000002892162&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-03",
+      "publicDataDetailPk": "uddi:f2d5995e-5b47-4476-9f04-c8b2519735a3",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-04-18",
+      "atchFileId": "FILE_000000002902625",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-03.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000002902625&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-04",
+      "publicDataDetailPk": "uddi:ccc6764a-b232-494e-a453-d21b929878f8",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-05-21",
+      "atchFileId": "FILE_000000002914278",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-04.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000002914278&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-05",
+      "publicDataDetailPk": "uddi:5ae3f030-6646-4239-b0f5-8e1b7b284007",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-06-21",
+      "atchFileId": "FILE_000000002930369",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-05.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000002930369&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-06",
+      "publicDataDetailPk": "uddi:fbc9aff6-7496-4c14-bc49-adfefb93557d",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-07-22",
+      "atchFileId": "FILE_000000002951840",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-06.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000002951840&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-07",
+      "publicDataDetailPk": "uddi:3f8e431e-efcf-4d25-b6f6-cef316722b84",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-08-22",
+      "atchFileId": "FILE_000000002998510",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-07.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000002998510&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-08",
+      "publicDataDetailPk": "uddi:ae2d6a33-e33b-4312-a902-c9a8c22d9ab0",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-09-24",
+      "atchFileId": "FILE_000000003030942",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-08.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003030942&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-09",
+      "publicDataDetailPk": "uddi:a1d51e9d-f55a-4f94-a06c-ef98691479fd",
+      "publicDataHistSn": "2",
+      "publishedDate": "2024-10-21",
+      "atchFileId": "FILE_000000003045465",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-09.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003045465&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-10",
+      "publicDataDetailPk": "uddi:f6873590-8c0d-4328-af24-8b24f81deb8b",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-11-21",
+      "atchFileId": "FILE_000000003059563",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-10.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003059563&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-11",
+      "publicDataDetailPk": "uddi:819641d2-a9ba-498a-a689-db8ad2c9800a",
+      "publicDataHistSn": "1",
+      "publishedDate": "2024-12-23",
+      "atchFileId": "FILE_000000003081018",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-11.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003081018&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2024-12",
+      "publicDataDetailPk": "uddi:3a89a14e-7230-467a-bf07-9ca33d06812d",
+      "publicDataHistSn": "2",
+      "publishedDate": "2025-01-23",
+      "atchFileId": "FILE_000000003092383",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2024-12.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003092383&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-01",
+      "publicDataDetailPk": "uddi:45ba8ffb-ab8c-44da-abd6-b10ec30821cd",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-02-24",
+      "atchFileId": "FILE_000000003102254",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-01.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003102254&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-02",
+      "publicDataDetailPk": "uddi:6d064493-1c29-4ddb-9bc5-be98e40a1e57",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-03-25",
+      "atchFileId": "FILE_000000003113171",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-02.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003113171&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-03",
+      "publicDataDetailPk": "uddi:45b0b01c-16bd-4621-ad04-fdaeb400b4f6",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-04-22",
+      "atchFileId": "FILE_000000003125831",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-03.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003125831&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-04",
+      "publicDataDetailPk": "uddi:6ec70fba-037c-4e20-8d47-88e26912b4e2",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-05-22",
+      "atchFileId": "FILE_000000003142010",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-04.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003142010&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-05",
+      "publicDataDetailPk": "uddi:58d465f8-71bf-4378-b4e8-e4b265e805da",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-06-23",
+      "atchFileId": "FILE_000000003167253",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-05.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003167253&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-06",
+      "publicDataDetailPk": "uddi:7c8ebb8e-baf4-49a0-a281-aa483c3158b8",
+      "publicDataHistSn": "2",
+      "publishedDate": "2025-07-24",
+      "atchFileId": "FILE_000000003195518",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-06.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003195518&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-07",
+      "publicDataDetailPk": "uddi:20ddf65d-51d8-421f-8ee5-b64f05554151",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-08-26",
+      "atchFileId": "FILE_000000003225993",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-07.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003225993&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-08",
+      "publicDataDetailPk": "uddi:14c0beb5-b153-4b03-892b-8d30a7600de1",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-09-23",
+      "atchFileId": "FILE_000000003258024",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-08.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003258024&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-09",
+      "publicDataDetailPk": "uddi:466a4aef-5a2d-4b2b-a3d9-8a6c11b81d23",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-10-31",
+      "atchFileId": "FILE_000000003508797",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-09.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003508797&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-10",
+      "publicDataDetailPk": "uddi:f9787983-d48a-4c94-b7b6-c805a5be3cca",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-11-24",
+      "atchFileId": "FILE_000000003539630",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-10.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003539630&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-11",
+      "publicDataDetailPk": "uddi:06b329ca-54a4-47f8-8c8f-8268d61c7d7c",
+      "publicDataHistSn": "1",
+      "publishedDate": "2025-12-23",
+      "atchFileId": "FILE_000000003569855",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-11.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003569855&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2025-12",
+      "publicDataDetailPk": "uddi:10a6e7bd-a2ee-4ee1-967c-bb9a6aea89a9",
+      "publicDataHistSn": "1",
+      "publishedDate": "2026-01-23",
+      "atchFileId": "FILE_000000003590996",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2025-12.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003590996&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2026-01",
+      "publicDataDetailPk": "uddi:74d9aa39-bc2c-4124-9cff-ec389dbf51e3",
+      "publicDataHistSn": "1",
+      "publishedDate": "2026-02-23",
+      "atchFileId": "FILE_000000003602190",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2026-01.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003602190&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2026-02",
+      "publicDataDetailPk": "uddi:7e1553a3-6b4a-4de0-81bf-86b37ee4d61a",
+      "publicDataHistSn": "1",
+      "publishedDate": "2026-03-23",
+      "atchFileId": "FILE_000000003614792",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2026-02.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003614792&fileDetailSn=1&insertDataPrcus=N"
+    },
+    {
+      "snapshotMonth": "2026-03",
+      "publicDataDetailPk": "uddi:210fa01d-23ea-4599-9a93-98a23ac53a18",
+      "publicDataHistSn": "1",
+      "publishedDate": "2026-04-23",
+      "atchFileId": "FILE_000000003631347",
+      "fileDetailSn": "1",
+      "fileName": "nps-workplaces-2026-03.csv",
+      "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+      "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003631347&fileDetailSn=1&insertDataPrcus=N"
+    }
+  ]
+}

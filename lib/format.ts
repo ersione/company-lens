@@ -19,3 +19,15 @@ export function formatSnapshotMonth(value: string | null | undefined) {
   const [year, month] = value.split("-");
   return `${year}년 ${Number(month)}월`;
 }
+
+export function formatIndustry(value: string | null | undefined) {
+  if (!value || value === "BIZ_NO미존재사업장") {
+    return "공공데이터 업종 미분류";
+  }
+
+  return value;
+}
+
+export function isDataQualityIndustry(value: string | null | undefined) {
+  return value === "BIZ_NO미존재사업장";
+}

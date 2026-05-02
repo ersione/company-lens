@@ -4,7 +4,7 @@ export function SearchForm({ query }: { query: string }) {
       <input
         name="q"
         defaultValue={query}
-        placeholder="회사명 또는 사업자등록번호 검색"
+        placeholder="회사명 검색"
         aria-label="회사 검색"
         autoComplete="off"
       />

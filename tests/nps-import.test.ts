@@ -6,6 +6,7 @@ import test from "node:test";
 import { createDb } from "@/db/client";
 import { migrate } from "@/db/migrate";
 import {
+  decodeCsvFile,
   estimateSalary,
   importNpsCsv,
   parseCsv,
@@ -32,6 +33,13 @@ function tempFile(contents: string) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "company-lens-"));
   const filePath = path.join(dir, "nps.csv");
   fs.writeFileSync(filePath, contents, "utf8");
+  return filePath;
+}
+
+function tempBinaryFile(contents: Buffer) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "company-lens-"));
+  const filePath = path.join(dir, "nps.csv");
+  fs.writeFileSync(filePath, contents);
   return filePath;
 }
 
@@ -72,6 +80,20 @@ test("parses a valid NPS row with fallback identity and salary estimate", () => 
   assert.equal(parsed.estimatedAverageAnnualSalary, 120000000);
 });
 
+test("accepts public-data status column aliases", () => {
+  const rows = parseCsv(
+    `${header.replace("사업장가입상태코드", "사업장가입상태코드 1 등록 2 탈퇴")}\n2025-01,테스트회사,,1,서울시 강남구,,소프트웨어,10,"9,000,000",2,1\n`
+  );
+
+  validateRequiredColumns(rows);
+  assert.equal(rows[0]["사업장가입상태코드"], "1");
+});
+
+test("decodes CP949 public-data CSV files", () => {
+  const filePath = tempBinaryFile(Buffer.from([0xc0, 0xda, 0xb7, 0xe1]));
+  assert.equal(decodeCsvFile(filePath), "자료");
+});
+
 test("blocks duplicate imports by checksum", async () => {
   const filePath = tempFile(
     `${header}\n202501,테스트회사,123-45-67890,1,서울시 강남구,,소프트웨어,10,\"9,000,000\",2,1\n`
@@ -83,6 +105,45 @@ test("blocks duplicate imports by checksum", async () => {
     migrate(client.sqlite);
     await importNpsCsv(filePath, client);
     await assert.rejects(() => importNpsCsv(filePath, client), /이미 가져온 파일입니다/);
+  } finally {
+    client.sqlite.close();
+  }
+});
+
+test("updates duplicate company snapshots within the same source file", async () => {
+  const filePath = tempFile(
+    `${header}\n202501,테스트회사,123-45-67890,1,서울시 강남구,,소프트웨어,10,"9,000,000",2,1\n202501,테스트회사,123-45-67890,1,서울시 강남구,,소프트웨어,12,"10,800,000",3,2\n`
+  );
+  const dbPath = path.join(path.dirname(filePath), "test.sqlite");
+  const client = createDb(dbPath);
+
+  try {
+    migrate(client.sqlite);
+    await importNpsCsv(filePath, client);
+    const snapshot = client.sqlite
+      .prepare("SELECT employee_count AS employeeCount, new_joiners AS newJoiners FROM company_snapshots")
+      .get() as { employeeCount: number; newJoiners: number };
+
+    assert.equal(snapshot.employeeCount, 12);
+    assert.equal(snapshot.newJoiners, 3);
+  } finally {
+    client.sqlite.close();
+  }
+});
+
+test("keeps workplaces distinct when registration prefix is shared", async () => {
+  const filePath = tempFile(
+    `${header}\n202501,테스트회사A,123456,1,서울시 강남구,,소프트웨어,10,"9,000,000",2,1\n202501,테스트회사B,123456,1,서울시 서초구,,소프트웨어,12,"10,800,000",3,2\n`
+  );
+  const dbPath = path.join(path.dirname(filePath), "test.sqlite");
+  const client = createDb(dbPath);
+
+  try {
+    migrate(client.sqlite);
+    await importNpsCsv(filePath, client);
+    const row = client.sqlite.prepare("SELECT COUNT(*) AS count FROM companies").get() as { count: number };
+
+    assert.equal(row.count, 2);
   } finally {
     client.sqlite.close();
   }

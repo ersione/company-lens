@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CompanyCharts } from "@/components/CompanyCharts";
 import { getCompanyDetail, getCompanyHistory } from "@/lib/company-queries";
-import { formatCurrency, formatNumber, formatSnapshotMonth } from "@/lib/format";
+import { formatCurrency, formatIndustry, formatNumber, formatSnapshotMonth, isDataQualityIndustry } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -19,6 +22,8 @@ export default async function CompanyPage({ params }: PageProps) {
     notFound();
   }
   const history = getCompanyHistory(companyId);
+  const chartHistory = [...history].reverse();
+  const industryLabel = formatIndustry(company.industry);
 
   return (
     <main className="page-shell detail-page">
@@ -30,7 +35,7 @@ export default async function CompanyPage({ params }: PageProps) {
         <div>
           <p className="eyebrow">{formatSnapshotMonth(company.snapshotMonth)} 기준</p>
           <h1>{company.name}</h1>
-          <p>{company.industry ?? "업종 정보 없음"}</p>
+          <p>{industryLabel}</p>
           <p>{company.address ?? "주소 정보 없음"}</p>
         </div>
         <div className="source-note">
@@ -48,7 +53,15 @@ export default async function CompanyPage({ params }: PageProps) {
         <Stat label="당월고지금액" value={`${formatNumber(company.monthlyBilledAmount)}원`} />
       </section>
 
-      <section className="detail-columns">
+      <section className="trend-section">
+        <div className="section-title-row">
+          <h2>월별 추이</h2>
+          <span>{history.length}개 스냅샷</span>
+        </div>
+        <CompanyCharts history={chartHistory} />
+      </section>
+
+      <section className="detail-columns detail-columns-single">
         <div>
           <h2>회사 정보</h2>
           <dl className="info-list">
@@ -57,6 +70,16 @@ export default async function CompanyPage({ params }: PageProps) {
               <dd>{company.registrationNumber ?? "-"}</dd>
             </div>
             <div>
+              <dt>업종</dt>
+              <dd>{industryLabel}</dd>
+            </div>
+            {isDataQualityIndustry(company.industry) ? (
+              <div>
+                <dt>원본 업종 표식</dt>
+                <dd>{company.industry}</dd>
+              </div>
+            ) : null}
+            <div>
               <dt>도로명주소</dt>
               <dd>{company.roadAddress ?? "-"}</dd>
             </div>
@@ -64,39 +87,7 @@ export default async function CompanyPage({ params }: PageProps) {
               <dt>지번주소</dt>
               <dd>{company.lotAddress ?? "-"}</dd>
             </div>
-            <div>
-              <dt>원본 파일</dt>
-              <dd>{company.sourceFileName ?? "-"}</dd>
-            </div>
           </dl>
-        </div>
-
-        <div>
-          <h2>월별 이력</h2>
-          <div className="history-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>기준월</th>
-                  <th>가입자수</th>
-                  <th>연봉 추정</th>
-                  <th>취득</th>
-                  <th>상실</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((snapshot) => (
-                  <tr key={snapshot.snapshotMonth}>
-                    <td>{formatSnapshotMonth(snapshot.snapshotMonth)}</td>
-                    <td>{formatNumber(snapshot.employeeCount)}</td>
-                    <td>{formatCurrency(snapshot.estimatedAverageAnnualSalary)}</td>
-                    <td>{formatNumber(snapshot.newJoiners)}</td>
-                    <td>{formatNumber(snapshot.departures)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       </section>
 

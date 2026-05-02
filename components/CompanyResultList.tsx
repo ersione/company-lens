@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { CompanySearchResult } from "@/lib/company-queries";
-import { formatCurrency, formatNumber, formatSnapshotMonth } from "@/lib/format";
+import { formatCurrency, formatIndustry, formatNumber, formatSnapshotMonth } from "@/lib/format";
 
 export function CompanyResultList({ results }: { results: CompanySearchResult[] }) {
   if (results.length === 0) {
@@ -18,7 +18,7 @@ export function CompanyResultList({ results }: { results: CompanySearchResult[] 
         <Link href={`/companies/${company.id}`} className="result-row" key={company.id}>
           <div className="result-main">
             <strong>{company.name}</strong>
-            <span>{company.industry ?? "업종 정보 없음"}</span>
+            <span>{formatIndustry(company.industry)}</span>
             <small>{company.address ?? "주소 정보 없음"}</small>
           </div>
           <div className="result-metrics">

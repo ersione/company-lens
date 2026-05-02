@@ -1,90 +1,182 @@
 # Company Lens
 
-Company Lens is a company intelligence product built from public employment and corporate datasets.
+Company Lens is a local-first company search tool built from Korean public data. It currently uses National Pension Service workplace data from the public data portal to show company-level signals such as subscriber count, new joiners, departures, and estimated average salary.
 
-The first version focuses on Korean public data, especially National Pension Service workplace data, to show company-level signals such as estimated average salary, employee count, hires, departures, and workforce trend.
+The app does not ship with the generated SQLite database or raw CSV files. Those files are recreated locally from the committed source manifest.
 
-## Product Direction
+## Stack
 
-Company Lens should feel closer to a practical company research tool than a marketing site. The first screen should help users search for a company and quickly judge employment scale, pay signal, and workforce momentum.
+- Next.js App Router
+- React 19
+- TypeScript
+- SQLite through `better-sqlite3`
+- Recharts
 
-Initial target users:
+## Fresh Checkout Setup
 
-- Job seekers checking whether a company is growing or shrinking
-- Employees comparing compensation and workforce movement
-- Researchers looking at company-level labor market signals
-- Founders/operators benchmarking companies in the same industry
+Install dependencies:
 
-## MVP Scope
+```bash
+npm install
+```
 
-Core features:
+Download all National Pension source files listed in the manifest and import them into SQLite:
 
-- Company search by name
-- Company profile page
-- Estimated average annual salary
-- Current employee count
-- Monthly hires and departures
-- Employee count trend over time
-- Industry and address metadata
-- Clear source and calculation disclosure
+```bash
+npm run sync:nps
+```
 
-Out of scope for the first cut:
+Use `download:nps` only when you want to download raw CSV files without importing them:
 
-- User reviews
-- Login and saved companies
-- Paid plans
-- Company self-editing
-- Job postings
-- Full financial statement analysis
+```bash
+npm run download:nps
+```
 
-## Data Sources
+Run the development server:
 
-Primary MVP source:
+```bash
+npm run dev -- -H 0.0.0.0 -p 3000
+```
 
-- National Pension Service workplace subscription data from data.go.kr
+Open:
 
-Likely later sources:
+- `http://localhost:3000`
+- `http://<your-lan-ip>:3000`
 
-- Employment insurance and industrial accident insurance public data
-- DART filings for listed companies
-- ALIO for public institutions
-- Cleaneye for local public enterprises
+The generated files are local-only and ignored by git:
 
-## Important Caveat
+- `data/raw/*.csv`
+- `data/db/company-lens.sqlite`
+- SQLite WAL/SHM sidecar files
 
-Salary values must be presented as estimates derived from public insurance-related data, not exact payroll data.
+## Data Manifest
 
-The UI should use wording such as:
+The committed source manifest is:
 
-- "Estimated average salary"
-- "National Pension based estimate"
-- "Public data estimate"
+```text
+config/nps-source-manifest.json
+```
 
-Avoid wording that implies exact compensation:
+It stores the public download recipe for each monthly snapshot:
 
-- "Actual salary"
-- "Confirmed salary"
-- "Payroll average"
+- `snapshotMonth`: data month used by the app, for example `2026-03`
+- `fileName`: local CSV file name under `data/raw/`
+- `sourcePageUrl`: public data portal dataset page
+- `downloadUrl`: actual file download URL
+- `publishedDate`: portal registration date
+- `publicDataDetailPk`, `publicDataHistSn`, `atchFileId`, `fileDetailSn`: portal identifiers kept for traceability
 
-## Suggested Tech Direction
+Current manifest range:
 
-The stack has not been finalized. A pragmatic default would be:
+```text
+2024-01 through 2026-03
+```
 
-- Next.js for the web app
-- PostgreSQL for normalized company and monthly employment data
-- Prisma or Drizzle for database access
-- A batch import pipeline for downloaded public data files
-- Server-side search first, then a dedicated search engine later if needed
+## Download And Import Commands
 
-## Next Session
+Download every manifest entry:
 
-Start by reading:
+```bash
+npm run download:nps
+```
 
-- `docs/product-plan.md`
-- `docs/data-plan.md`
+Download only a range:
 
-Then decide the initial stack and scaffold the app.
+```bash
+npm run download:nps -- --from 2026-01 --to 2026-03
+```
 
-## Current Implementation
+Import one already-downloaded file:
 
-The initial Next.js/SQLite MVP scaffold has been added. See `docs/implementation-status.md` for the implemented scope, local import command, and the current dependency-install blocker on older macOS systems.
+```bash
+npm run import:nps -- data/raw/nps-workplaces-2026-03.csv
+```
+
+Download and import all manifest entries, skipping files already downloaded and files already imported:
+
+```bash
+npm run sync:nps
+```
+
+Sync only a range:
+
+```bash
+npm run sync:nps -- --from 2026-03 --to 2026-03
+```
+
+## Adding A New Month
+
+When a new public data file appears, for example the 2026-04 snapshot:
+
+1. Open the source page:
+
+```text
+https://www.data.go.kr/data/15083277/fileData.do
+```
+
+2. Find the new history row for the latest `국민연금공단_국민연금 가입 사업장 내역_YYYYMMDD` entry.
+
+3. Open its detail layer or inspect the page response and collect:
+
+```text
+publicDataDetailPk
+publicDataHistSn
+atchFileId
+fileDetailSn
+publishedDate
+```
+
+4. Add a new object to `config/nps-source-manifest.json`.
+
+Example shape:
+
+```json
+{
+  "snapshotMonth": "2026-04",
+  "publicDataDetailPk": "uddi:...",
+  "publicDataHistSn": "1",
+  "publishedDate": "2026-05-23",
+  "atchFileId": "FILE_...",
+  "fileDetailSn": "1",
+  "fileName": "nps-workplaces-2026-04.csv",
+  "sourcePageUrl": "https://www.data.go.kr/data/15083277/fileData.do",
+  "downloadUrl": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_...&fileDetailSn=1&insertDataPrcus=N"
+}
+```
+
+5. Download and import only that month:
+
+```bash
+npm run sync:nps -- --from 2026-04 --to 2026-04
+```
+
+6. Verify:
+
+```bash
+npm test
+npm run build
+```
+
+The `snapshotMonth` is the data month, not always the portal registration month. In practice, a file published in May often represents April data.
+
+## Verification
+
+Run:
+
+```bash
+npm test
+npm run build
+```
+
+## Data Caveat
+
+Salary values are estimates derived from National Pension public data. They are not exact payroll data.
+
+The estimate currently uses:
+
+```text
+estimated monthly salary = monthly billed amount / subscriber count / 0.09
+estimated annual salary = estimated monthly salary * 12
+```
+
+Subscriber count, new joiners, and departures should not be reconciled as a simple formula. The public file reports subscriber count as a monthly snapshot and new/loss counts as monthly events, and timing or retroactive corrections can make them differ from net month-over-month movement.
