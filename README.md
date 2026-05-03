@@ -59,6 +59,18 @@ The generated files are local-only and ignored by git:
 - `data/db/company-lens.sqlite`
 - SQLite WAL/SHM sidecar files
 
+## License And Data Source
+
+The application source code is released under the MIT License. See `LICENSE`.
+
+The National Pension workplace data is sourced from the Korean public data portal:
+
+```text
+https://www.data.go.kr/data/15083277/fileData.do
+```
+
+The generated SQLite database and downloaded CSV files are not included in this repository. Recreated data files should be used according to the original public-data source terms and attribution requirements from data.go.kr and the National Pension Service.
+
 ## Data Manifest
 
 The committed source manifest is:
