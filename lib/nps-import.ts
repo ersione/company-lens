@@ -1,12 +1,20 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { TextDecoder } from "node:util";
+import { pipeline } from "node:stream/promises";
+import { createGunzip } from "node:zlib";
+import { parse } from "csv-parse";
+import { parse as parseSync } from "csv-parse/sync";
+import iconv from "iconv-lite";
+import { eq } from "drizzle-orm";
+import { sourceFiles } from "@/db/schema";
 import type { createDb } from "@/db/client";
+import { estimateSalary } from "@/lib/pension";
+import { refreshMonthlyStatistics } from "@/lib/monthly-statistics";
+export { estimateSalary } from "@/lib/pension";
 
 export const NPS_SOURCE_NAME = "국민연금공단 사업장 가입자 명부";
 export const NPS_SOURCE_URL = "https://www.data.go.kr/data/15083277/fileData.do";
-export const PENSION_RATE = 0.09;
 
 export const requiredColumns = [
   "자료생성년월",
@@ -24,10 +32,6 @@ export const requiredColumns = [
 
 export type NpsColumn = (typeof requiredColumns)[number];
 export type NpsRawRow = Record<NpsColumn, string> & Record<string, string>;
-
-const columnAliases: Record<string, NpsColumn> = {
-  "사업장가입상태코드 1 등록 2 탈퇴": "사업장가입상태코드"
-};
 
 export type ParsedNpsRow = {
   snapshotMonth: string;
@@ -49,75 +53,17 @@ export type ParsedNpsRow = {
 };
 
 export function parseCsv(text: string) {
-  const rows: string[][] = [];
-  let field = "";
-  let row: string[] = [];
-  let inQuotes = false;
-  const input = text.replace(/^\uFEFF/, "");
-
-  for (let i = 0; i < input.length; i += 1) {
-    const char = input[i];
-    const next = input[i + 1];
-
-    if (char === "\"") {
-      if (inQuotes && next === "\"") {
-        field += "\"";
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === "," && !inQuotes) {
-      row.push(field);
-      field = "";
-    } else if ((char === "\n" || char === "\r") && !inQuotes) {
-      if (char === "\r" && next === "\n") {
-        i += 1;
-      }
-      row.push(field);
-      if (row.some((value) => value.trim() !== "")) {
-        rows.push(row);
-      }
-      row = [];
-      field = "";
-    } else {
-      field += char;
-    }
-  }
-
-  if (field.length > 0 || row.length > 0) {
-    row.push(field);
-    if (row.some((value) => value.trim() !== "")) {
-      rows.push(row);
-    }
-  }
-
-  if (rows.length === 0) {
-    return [];
-  }
-
-  const headers = rows[0].map((header) => canonicalColumnName(header.trim()));
-  return rows.slice(1).map((values) => {
-    const record: Record<string, string> = {};
-    headers.forEach((header, index) => {
-      record[header] = (values[index] ?? "").trim();
-    });
-    return record;
-  });
+  return parseSync(text, csvOptions) as Record<string, string>[];
 }
 
-export function canonicalColumnName(column: string) {
-  return columnAliases[column] ?? column;
-}
-
-export function decodeCsvFile(filePath: string) {
-  const buffer = fs.readFileSync(filePath);
-  const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(buffer);
-  if (!utf8.includes("\uFFFD")) {
-    return utf8;
-  }
-
-  return new TextDecoder("euc-kr", { fatal: false }).decode(buffer);
-}
+const csvOptions = {
+  bom: true,
+  trim: true,
+  skip_empty_lines: true,
+  columns: (headers: string[]) => headers.map((header) =>
+    requiredColumns.find((column) => header.trim().startsWith(column)) ?? header.trim()
+  )
+};
 
 export function validateRequiredColumns(rows: Record<string, string>[]) {
   if (rows.length === 0) {
@@ -146,31 +92,19 @@ export function parseInteger(value: string | null | undefined) {
     return null;
   }
 
-  const parsed = Number.parseInt(cleaned, 10);
-  return Number.isFinite(parsed) ? parsed : null;
+  const parsed = Number(cleaned);
+  if (!/^\d+$/.test(cleaned) || !Number.isSafeInteger(parsed)) {
+    throw new Error(`유효한 음이 아닌 정수가 아닙니다: ${value}`);
+  }
+  return parsed;
 }
 
 export function normalizeSnapshotMonth(value: string) {
   const digits = value.replace(/\D/g, "");
-  if (digits.length < 6) {
+  if (digits.length !== 6 || Number(digits.slice(4, 6)) < 1 || Number(digits.slice(4, 6)) > 12) {
     throw new Error(`자료생성년월 값이 올바르지 않습니다: ${value}`);
   }
   return `${digits.slice(0, 4)}-${digits.slice(4, 6)}`;
-}
-
-export function estimateSalary(monthlyBilledAmount: number | null, employeeCount: number | null) {
-  if (!monthlyBilledAmount || !employeeCount || employeeCount <= 0) {
-    return {
-      estimatedAverageMonthlySalary: null,
-      estimatedAverageAnnualSalary: null
-    };
-  }
-
-  const estimatedAverageMonthlySalary = Math.round(monthlyBilledAmount / employeeCount / PENSION_RATE);
-  return {
-    estimatedAverageMonthlySalary,
-    estimatedAverageAnnualSalary: estimatedAverageMonthlySalary * 12
-  };
 }
 
 export function parseNpsRow(row: NpsRawRow): ParsedNpsRow {
@@ -184,16 +118,16 @@ export function parseNpsRow(row: NpsRawRow): ParsedNpsRow {
   const address = roadAddress ?? lotAddress;
   const registrationNumber = row["사업자등록번호"].replace(/\D/g, "") || null;
   const normalizedName = normalizeCompanyName(name);
-  const identityBasis = `${normalizedName}:${address ?? ""}`;
-  const identityKey = registrationNumber
-    ? `registration:${registrationNumber}:${identityBasis}`
-    : `fallback:${identityBasis}`;
+  const identityKey = registrationNumber?.length === 10
+    ? `registration:${registrationNumber}`
+    : `fallback:${normalizedName}:${address ?? ""}${registrationNumber ? `:${registrationNumber}` : ""}`;
   const employeeCount = parseInteger(row["가입자수"]);
   const monthlyBilledAmount = parseInteger(row["당월고지금액"]);
-  const salary = estimateSalary(monthlyBilledAmount, employeeCount);
+  const snapshotMonth = normalizeSnapshotMonth(row["자료생성년월"]);
+  const salary = estimateSalary(monthlyBilledAmount, employeeCount, snapshotMonth);
 
   return {
-    snapshotMonth: normalizeSnapshotMonth(row["자료생성년월"]),
+    snapshotMonth,
     name,
     normalizedName,
     registrationNumber,
@@ -211,175 +145,144 @@ export function parseNpsRow(row: NpsRawRow): ParsedNpsRow {
   };
 }
 
-export function fileChecksum(filePath: string) {
-  return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+export async function fileChecksum(filePath: string) {
+  const hash = crypto.createHash("sha256");
+  for await (const chunk of contentStream(filePath)) hash.update(chunk);
+  return hash.digest("hex");
 }
 
-export async function importNpsCsv(filePath: string, client: ReturnType<typeof createDb>) {
+function contentStream(filePath: string) {
+  const input = fs.createReadStream(filePath);
+  if (!filePath.endsWith(".gz")) return input;
+  const decoded = createGunzip();
+  input.on("error", (error) => decoded.destroy(error));
+  decoded.on("close", () => input.destroy());
+  return input.pipe(decoded);
+}
+
+async function detectEncoding(filePath: string) {
+  for await (const chunk of contentStream(filePath)) {
+    try {
+      new TextDecoder("utf-8", { fatal: true }).decode(chunk, { stream: true });
+      return "utf-8";
+    } catch {
+      return "euc-kr";
+    }
+  }
+  return "utf-8";
+}
+
+async function* readRows(filePath: string) {
+  const parser = parse(csvOptions);
+  let failure: unknown;
+  const completed = pipeline(contentStream(filePath), iconv.decodeStream(await detectEncoding(filePath)), parser)
+    .catch((error: unknown) => { failure = error; });
+  try {
+    for await (const row of parser) yield row as NpsRawRow;
+    await completed;
+    if (failure) throw failure;
+  } finally {
+    parser.destroy();
+    await completed;
+  }
+}
+
+export async function importNpsCsv(filePath: string, client: ReturnType<typeof createDb>, onProgress?: (rows: number) => void,
+  options: { publishedAt?: string } = {}) {
+  client.sqlite.pragma("cache_size = -131072");
   const absolutePath = path.resolve(filePath);
-  const checksum = fileChecksum(absolutePath);
-  const duplicate = client.sqlite.prepare("SELECT file_name AS fileName, checksum FROM source_files WHERE checksum = ?").get(
-    checksum
-  ) as { fileName: string; checksum: string } | undefined;
+  const checksum = await fileChecksum(absolutePath);
+  const duplicate = client.db.select().from(sourceFiles).where(eq(sourceFiles.checksum, checksum)).get();
   if (duplicate) {
     throw new Error(`이미 가져온 파일입니다: ${duplicate.fileName} (${duplicate.checksum})`);
   }
 
-  const text = decodeCsvFile(absolutePath);
-  const rawRows = parseCsv(text);
-  validateRequiredColumns(rawRows);
-  const parsedRows = rawRows.map((row) => parseNpsRow(row as NpsRawRow));
-  const snapshotMonths = new Set(parsedRows.map((row) => row.snapshotMonth));
-  if (snapshotMonths.size !== 1) {
-    throw new Error(`파일에는 하나의 자료생성년월만 있어야 합니다: ${Array.from(snapshotMonths).join(", ")}`);
-  }
-
   const now = new Date().toISOString();
-  const snapshotMonth = parsedRows[0].snapshotMonth;
-
-  return client.sqlite.transaction(() => {
-    const sourceFile = client.sqlite
-      .prepare(
-        `
-        INSERT INTO source_files (
-          source_name,
-          source_url,
-          file_name,
-          snapshot_month,
-          checksum,
-          row_count,
-          imported_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        RETURNING
-          id,
-          source_name AS sourceName,
-          source_url AS sourceUrl,
-          file_name AS fileName,
-          snapshot_month AS snapshotMonth,
-          checksum,
-          row_count AS rowCount,
-          imported_at AS importedAt
-      `
-      )
-      .get(NPS_SOURCE_NAME, NPS_SOURCE_URL, path.basename(absolutePath), snapshotMonth, checksum, parsedRows.length, now) as {
-      id: number;
-      sourceName: string;
-      sourceUrl: string;
-      fileName: string;
-      snapshotMonth: string;
-      checksum: string;
-      rowCount: number;
-      importedAt: string;
-    };
-
-    const upsertCompany = client.sqlite.prepare(
-      `
-      INSERT INTO companies (
-        identity_key,
-        registration_number,
-        name,
-        normalized_name,
-        industry,
-        address,
-        road_address,
-        lot_address,
-        created_at,
-        updated_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(identity_key) DO UPDATE SET
-        registration_number = excluded.registration_number,
-        name = excluded.name,
-        normalized_name = excluded.normalized_name,
-        industry = excluded.industry,
-        address = excluded.address,
-        road_address = excluded.road_address,
-        lot_address = excluded.lot_address,
-        updated_at = excluded.updated_at
-      RETURNING id
-    `
-    );
-
-    const upsertSnapshot = client.sqlite.prepare(
-      `
-      INSERT INTO company_snapshots (
-        company_id,
-        source_file_id,
-        snapshot_month,
-        subscription_status_code,
-        employee_count,
-        monthly_billed_amount,
-        new_joiners,
-        departures,
-        estimated_average_monthly_salary,
-        estimated_average_annual_salary,
-        created_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(company_id, snapshot_month, source_file_id) DO UPDATE SET
-        subscription_status_code = excluded.subscription_status_code,
-        employee_count = excluded.employee_count,
-        monthly_billed_amount = excluded.monthly_billed_amount,
-        new_joiners = excluded.new_joiners,
-        departures = excluded.departures,
-        estimated_average_monthly_salary = excluded.estimated_average_monthly_salary,
-        estimated_average_annual_salary = excluded.estimated_average_annual_salary
-    `
-    );
-
-    const upsertSearchIndex = client.sqlite.prepare(
-      `
-      INSERT OR REPLACE INTO company_search_fts (
-        rowid,
-        name,
-        normalized_name
-      )
-      VALUES (?, ?, ?)
-    `
-    );
-
-    let companyCount = 0;
-    let snapshotCount = 0;
-
-    for (const row of parsedRows) {
-      const company = upsertCompany.get(
-        row.identityKey,
-        row.registrationNumber,
-        row.name,
-        row.normalizedName,
-        row.industry,
-        row.address,
-        row.roadAddress,
-        row.lotAddress,
-        now,
-        now
-      ) as { id: number };
-
-      companyCount += 1;
-
-      upsertSearchIndex.run(company.id, row.name, row.normalizedName);
-
-      upsertSnapshot.run(
-        company.id,
-        sourceFile.id,
-        row.snapshotMonth,
-        row.subscriptionStatusCode,
-        row.employeeCount,
-        row.monthlyBilledAmount,
-        row.newJoiners,
-        row.departures,
-        row.estimatedAverageMonthlySalary,
-        row.estimatedAverageAnnualSalary,
-        now
-      );
-      snapshotCount += 1;
+  const fileDate = path.basename(absolutePath).match(/(?:^|\D)((?:19|20)\d{2})(\d{2})(\d{2})(?=\D|$)/)?.slice(1).join("-");
+  const publishedAt = options.publishedAt ?? fileDate ?? null;
+  if (publishedAt) {
+    const timestamp = Date.parse(`${publishedAt}T00:00:00Z`);
+    if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== publishedAt) {
+      throw new Error(`공개일이 올바르지 않습니다: ${publishedAt}`);
     }
-
-    return {
-      sourceFile,
-      companyCount,
-      snapshotCount
-    };
-  })();
+  }
+  const upsertCompanies = `
+    INSERT INTO companies (identity_key, registration_number, name, normalized_name, industry, address, road_address, lot_address, created_at, updated_at, latest_snapshot_month)
+    SELECT identity_key, registration_number, name, normalized_name, industry, address, road_address,
+      lot_address, @now, @now, @snapshotMonth FROM nps_import_groups WHERE 1
+    ON CONFLICT(identity_key) DO UPDATE SET
+      ${["registration_number", "name", "normalized_name", "address", "road_address", "lot_address", "updated_at"].map((column) =>
+        `${column} = CASE WHEN excluded.latest_snapshot_month >= companies.latest_snapshot_month THEN excluded.${column} ELSE companies.${column} END`).join(",\n")},
+      industry = CASE WHEN excluded.latest_snapshot_month < companies.latest_snapshot_month THEN companies.industry
+        ELSE excluded.industry END,
+      latest_snapshot_month = MAX(companies.latest_snapshot_month, excluded.latest_snapshot_month)
+    WHERE excluded.latest_snapshot_month >= companies.latest_snapshot_month
+      AND (${["registration_number", "name", "normalized_name", "industry", "address", "road_address", "lot_address"].map((column) =>
+        `companies.${column} IS NOT excluded.${column}`).join(" OR ")})
+      AND @sourceFileId = (SELECT id FROM source_files WHERE snapshot_month = @snapshotMonth
+        ORDER BY COALESCE(published_at, '') DESC, id DESC LIMIT 1)
+  `;
+  const insertSnapshots = `
+    INSERT INTO company_snapshots (company_id, source_file_id, snapshot_month, subscription_status_code,
+      employee_count, monthly_billed_amount, new_joiners, departures, industry)
+    SELECT c.id, @sourceFileId, @snapshotMonth, g.subscription_status_code,
+      g.employee_count, g.monthly_billed_amount, g.new_joiners, g.departures, g.industry
+    FROM nps_import_groups g JOIN companies c ON c.identity_key = g.identity_key ORDER BY c.id
+  `;
+  let sourceFile: typeof sourceFiles.$inferSelect | undefined;
+  let rowCount = 0;
+  client.sqlite.exec("BEGIN IMMEDIATE");
+  try {
+    client.sqlite.exec(`CREATE TEMP TABLE nps_import_rows (
+      identity_key TEXT, registration_number TEXT, name TEXT, normalized_name TEXT, industry TEXT,
+      address TEXT, road_address TEXT, lot_address TEXT, subscription_status_code TEXT,
+      employee_count INTEGER, monthly_billed_amount INTEGER, new_joiners INTEGER, departures INTEGER
+    );`);
+    const stage = client.sqlite.prepare(`INSERT INTO nps_import_rows VALUES (@identityKey, @registrationNumber,
+      @name, @normalizedName, @industry, @address, @roadAddress, @lotAddress, @subscriptionStatusCode,
+      @employeeCount, @monthlyBilledAmount, @newJoiners, @departures)`);
+    for await (const rawRow of readRows(absolutePath)) {
+      if (rowCount === 0) validateRequiredColumns([rawRow]);
+      const row = parseNpsRow(rawRow);
+      if (!sourceFile) {
+        sourceFile = client.db.insert(sourceFiles).values({
+          sourceName: NPS_SOURCE_NAME, sourceUrl: NPS_SOURCE_URL,
+          fileName: path.basename(absolutePath), snapshotMonth: row.snapshotMonth,
+          checksum, rowCount: 0, importedAt: now, publishedAt
+        }).returning().get();
+      }
+      if (row.snapshotMonth !== sourceFile.snapshotMonth) throw new Error("파일에는 하나의 자료생성년월만 있어야 합니다.");
+      stage.run(row);
+      rowCount += 1;
+      if (rowCount % 50000 === 0) onProgress?.(rowCount);
+    }
+    if (!sourceFile) throw new Error("CSV 파일에 데이터 행이 없습니다.");
+    // Group in SQLite, then write company-ordered snapshots to keep index updates local.
+    client.sqlite.exec(`CREATE TEMP TABLE nps_import_groups AS SELECT identity_key,
+      MAX(registration_number) AS registration_number, MAX(name) AS name, MAX(normalized_name) AS normalized_name,
+      CASE WHEN COUNT(DISTINCT COALESCE(industry, '')) > 1 THEN '복수 업종' ELSE MAX(industry) END AS industry,
+      MAX(address) AS address, MAX(road_address) AS road_address, MAX(lot_address) AS lot_address,
+      CASE WHEN MAX(subscription_status_code = '1') = 1 THEN '1' ELSE MAX(subscription_status_code) END AS subscription_status_code,
+      ${["employee_count", "monthly_billed_amount", "new_joiners", "departures"].map((column) =>
+        `CASE WHEN COUNT(${column}) = COUNT(*) THEN SUM(${column}) END AS ${column}`).join(",\n")}
+      FROM nps_import_rows GROUP BY identity_key;
+      DROP TABLE nps_import_rows;`);
+    client.sqlite.prepare(upsertCompanies).run({ now, snapshotMonth: sourceFile.snapshotMonth, sourceFileId: sourceFile.id });
+    client.sqlite.prepare(`UPDATE companies SET latest_snapshot_month = @snapshotMonth, updated_at = @now
+      WHERE latest_snapshot_month < @snapshotMonth AND id IN (
+        SELECT c.id FROM nps_import_groups g JOIN companies c ON c.identity_key = g.identity_key
+      ) AND @sourceFileId = (SELECT id FROM source_files WHERE snapshot_month = @snapshotMonth
+        ORDER BY COALESCE(published_at, '') DESC, id DESC LIMIT 1)`)
+      .run({ now, snapshotMonth: sourceFile.snapshotMonth, sourceFileId: sourceFile.id });
+    client.sqlite.prepare(insertSnapshots).run({ snapshotMonth: sourceFile.snapshotMonth, sourceFileId: sourceFile.id });
+    client.sqlite.exec("DROP TABLE nps_import_groups;");
+    client.db.update(sourceFiles).set({ rowCount }).where(eq(sourceFiles.id, sourceFile.id)).run();
+    const { count } = client.sqlite.prepare("SELECT COUNT(*) AS count FROM company_snapshots WHERE source_file_id = ?").get(sourceFile.id) as { count: number };
+    refreshMonthlyStatistics(client.sqlite, sourceFile.snapshotMonth);
+    client.sqlite.exec("COMMIT");
+    return { sourceFile: { ...sourceFile, rowCount }, companyCount: count, snapshotCount: count, rowCount, aggregatedRowCount: rowCount - count };
+  } catch (error) {
+    client.sqlite.exec("ROLLBACK");
+    throw error;
+  }
 }

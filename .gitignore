@@ -1,7 +1,11 @@
 node_modules/
 .next/
+.next-*/
 out/
 dist/
+*.tsbuildinfo
+test-results/
+playwright-report/
 
 .env
 .env.local

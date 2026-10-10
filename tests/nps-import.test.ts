@@ -3,10 +3,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import iconv from "iconv-lite";
 import { createDb } from "@/db/client";
 import { migrate } from "@/db/migrate";
 import {
-  decodeCsvFile,
   estimateSalary,
   importNpsCsv,
   parseCsv,
@@ -14,6 +14,7 @@ import {
   parseNpsRow,
   validateRequiredColumns
 } from "@/lib/nps-import";
+import { pensionRateForMonth } from "@/lib/pension";
 
 const header = [
   "자료생성년월",
@@ -33,13 +34,6 @@ function tempFile(contents: string) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "company-lens-"));
   const filePath = path.join(dir, "nps.csv");
   fs.writeFileSync(filePath, contents, "utf8");
-  return filePath;
-}
-
-function tempBinaryFile(contents: Buffer) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "company-lens-"));
-  const filePath = path.join(dir, "nps.csv");
-  fs.writeFileSync(filePath, contents);
   return filePath;
 }
 
@@ -80,20 +74,6 @@ test("parses a valid NPS row with fallback identity and salary estimate", () => 
   assert.equal(parsed.estimatedAverageAnnualSalary, 120000000);
 });
 
-test("accepts public-data status column aliases", () => {
-  const rows = parseCsv(
-    `${header.replace("사업장가입상태코드", "사업장가입상태코드 1 등록 2 탈퇴")}\n2025-01,테스트회사,,1,서울시 강남구,,소프트웨어,10,"9,000,000",2,1\n`
-  );
-
-  validateRequiredColumns(rows);
-  assert.equal(rows[0]["사업장가입상태코드"], "1");
-});
-
-test("decodes CP949 public-data CSV files", () => {
-  const filePath = tempBinaryFile(Buffer.from([0xc0, 0xda, 0xb7, 0xe1]));
-  assert.equal(decodeCsvFile(filePath), "자료");
-});
-
 test("blocks duplicate imports by checksum", async () => {
   const filePath = tempFile(
     `${header}\n202501,테스트회사,123-45-67890,1,서울시 강남구,,소프트웨어,10,\"9,000,000\",2,1\n`
@@ -110,41 +90,51 @@ test("blocks duplicate imports by checksum", async () => {
   }
 });
 
-test("updates duplicate company snapshots within the same source file", async () => {
-  const filePath = tempFile(
-    `${header}\n202501,테스트회사,123-45-67890,1,서울시 강남구,,소프트웨어,10,"9,000,000",2,1\n202501,테스트회사,123-45-67890,1,서울시 강남구,,소프트웨어,12,"10,800,000",3,2\n`
-  );
-  const dbPath = path.join(path.dirname(filePath), "test.sqlite");
-  const client = createDb(dbPath);
+test("applies contribution rates by snapshot year and handles zero billed amount", () => {
+  assert.equal(pensionRateForMonth("2025-12"), 0.09);
+  assert.equal(pensionRateForMonth("2026-01"), 0.095);
+  assert.equal(pensionRateForMonth("2033-01"), 0.13);
+  assert.equal(estimateSalary(950000, 10, "2026-08").estimatedAverageMonthlySalary, 1000000);
+  assert.equal(estimateSalary(0, 10, "2026-08").estimatedAverageMonthlySalary, 0);
+  assert.throws(() => parseInteger("-12"));
+  assert.throws(() => parseInteger("12bad"));
+});
 
+test("imports EUC-KR official headers, separates masked registrations, and aggregates repeated workplaces", async () => {
+  const officialHeader = header.replace("사업장가입상태코드", "사업장가입상태코드 1 등록 2 탈퇴");
+  const contents = `${officialHeader}\n202608,테스트회사,123456,1,서울시 강남구,,소프트웨어,10,950000,2,1\n202608,테스트회사,123456,1,서울시 강남구,,소프트웨어,5,475000,1,0\n202608,다른회사,123456,1,서울시 중구,,,3,285000,0,0\n`;
+  const filePath = tempFile("");
+  fs.writeFileSync(filePath, iconv.encode(contents, "euc-kr"));
+  const client = createDb(path.join(path.dirname(filePath), "test.sqlite"));
   try {
     migrate(client.sqlite);
-    await importNpsCsv(filePath, client);
-    const snapshot = client.sqlite
-      .prepare("SELECT employee_count AS employeeCount, new_joiners AS newJoiners FROM company_snapshots")
-      .get() as { employeeCount: number; newJoiners: number };
-
-    assert.equal(snapshot.employeeCount, 12);
-    assert.equal(snapshot.newJoiners, 3);
+    const result = await importNpsCsv(filePath, client);
+    assert.equal(result.rowCount, 3);
+    assert.equal(result.companyCount, 2);
+    assert.equal(result.aggregatedRowCount, 1);
+    const snapshot = client.sqlite.prepare(`SELECT s.* FROM company_snapshots s JOIN companies c ON c.id = s.company_id WHERE c.name = '테스트회사'`).get() as Record<string, number>;
+    assert.equal(snapshot.employee_count, 15);
+    assert.equal(snapshot.new_joiners, 3);
+    assert.deepEqual(estimateSalary(snapshot.monthly_billed_amount, snapshot.employee_count, "2026-08"), {
+      estimatedAverageMonthlySalary: 1000000, estimatedAverageAnnualSalary: 12000000
+    });
+    assert.ok(!("estimated_average_monthly_salary" in snapshot));
   } finally {
     client.sqlite.close();
+    fs.rmSync(path.dirname(filePath), { recursive: true, force: true });
   }
 });
 
-test("keeps workplaces distinct when registration prefix is shared", async () => {
-  const filePath = tempFile(
-    `${header}\n202501,테스트회사A,123456,1,서울시 강남구,,소프트웨어,10,"9,000,000",2,1\n202501,테스트회사B,123456,1,서울시 서초구,,소프트웨어,12,"10,800,000",3,2\n`
-  );
-  const dbPath = path.join(path.dirname(filePath), "test.sqlite");
-  const client = createDb(dbPath);
-
+test("rolls back all rows and the source record when a later row is invalid", async () => {
+  const filePath = tempFile(`${header}\n202608,테스트회사,123456,1,,,,10,950000,2,1\n202608,다른회사,999999,1,,,,-1,950000,2,1\n`);
+  const client = createDb(path.join(path.dirname(filePath), "test.sqlite"));
   try {
     migrate(client.sqlite);
-    await importNpsCsv(filePath, client);
-    const row = client.sqlite.prepare("SELECT COUNT(*) AS count FROM companies").get() as { count: number };
-
-    assert.equal(row.count, 2);
+    await assert.rejects(() => importNpsCsv(filePath, client), /정수가 아닙니다/);
+    assert.deepEqual(client.sqlite.prepare("SELECT COUNT(*) AS count FROM companies").get(), { count: 0 });
+    assert.deepEqual(client.sqlite.prepare("SELECT COUNT(*) AS count FROM source_files").get(), { count: 0 });
   } finally {
     client.sqlite.close();
+    fs.rmSync(path.dirname(filePath), { recursive: true, force: true });
   }
 });
