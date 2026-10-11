@@ -138,3 +138,27 @@ test("rolls back all rows and the source record when a later row is invalid", as
     fs.rmSync(path.dirname(filePath), { recursive: true, force: true });
   }
 });
+
+test("name observations preserve collected names without stitching masked identities", async () => {
+  const filePath = tempFile(`${header}\n202601,이전상호,1234567890,1,서울시 강남구,,소프트웨어,10,950000,0,0\n202601,이전상호,123456,1,서울시 중구,,소프트웨어,10,950000,0,0\n`);
+  const client = createDb(path.join(path.dirname(filePath), "test.sqlite"));
+  try {
+    migrate(client.sqlite);
+    await importNpsCsv(filePath, client);
+    fs.writeFileSync(filePath, `${header}\n202602,새상호,1234567890,1,서울시 강남구,,소프트웨어,12,1140000,2,0\n202602,새상호,123456,1,서울시 중구,,소프트웨어,12,1140000,2,0\n`);
+    await importNpsCsv(filePath, client);
+    const names = client.sqlite.prepare(`SELECT name, first_seen_month AS first, last_seen_month AS last
+      FROM company_name_observations WHERE company_id = (SELECT id FROM companies WHERE identity_key = 'registration:1234567890')
+      ORDER BY first_seen_month`).all();
+    assert.deepEqual(names, [{ name: "이전상호", first: "2026-01", last: "2026-01" }, { name: "새상호", first: "2026-02", last: "2026-02" }]);
+    assert.deepEqual(client.sqlite.prepare("SELECT COUNT(*) AS count FROM companies").get(), { count: 3 });
+    fs.writeFileSync(filePath, `${header}\n202512,더옛상호,1234567890,1,서울시 강남구,,소프트웨어,8,720000,0,0\n`);
+    await importNpsCsv(filePath, client);
+    assert.equal((client.sqlite.prepare("SELECT name FROM companies WHERE identity_key = 'registration:1234567890'").get() as { name: string }).name, "새상호");
+    assert.deepEqual(client.sqlite.prepare(`SELECT COUNT(*) AS count FROM company_name_observations
+      WHERE company_id = (SELECT id FROM companies WHERE identity_key = 'registration:1234567890')`).get(), { count: 3 });
+  } finally {
+    client.sqlite.close();
+    fs.rmSync(path.dirname(filePath), { recursive: true, force: true });
+  }
+});

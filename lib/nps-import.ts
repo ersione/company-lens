@@ -267,7 +267,21 @@ export async function importNpsCsv(filePath: string, client: ReturnType<typeof c
         `CASE WHEN COUNT(${column}) = COUNT(*) THEN SUM(${column}) END AS ${column}`).join(",\n")}
       FROM nps_import_rows GROUP BY identity_key;
       DROP TABLE nps_import_rows;`);
+    // Preserve observed names before metadata changes. A month range is not a legal rename date.
+    client.sqlite.prepare(`INSERT INTO company_name_observations
+      SELECT c.id, c.name, c.latest_snapshot_month, c.latest_snapshot_month
+      FROM nps_import_groups g JOIN companies c ON c.identity_key = g.identity_key
+      WHERE c.latest_snapshot_month != ''
+      ON CONFLICT(company_id, name) DO UPDATE SET
+        first_seen_month = MIN(first_seen_month, excluded.first_seen_month),
+        last_seen_month = MAX(last_seen_month, excluded.last_seen_month)`).run();
     client.sqlite.prepare(upsertCompanies).run({ now, snapshotMonth: sourceFile.snapshotMonth, sourceFileId: sourceFile.id });
+    client.sqlite.prepare(`INSERT INTO company_name_observations
+      SELECT c.id, g.name, ?, ? FROM nps_import_groups g JOIN companies c ON c.identity_key = g.identity_key WHERE 1
+      ON CONFLICT(company_id, name) DO UPDATE SET
+        first_seen_month = MIN(first_seen_month, excluded.first_seen_month),
+        last_seen_month = MAX(last_seen_month, excluded.last_seen_month)`)
+      .run(sourceFile.snapshotMonth, sourceFile.snapshotMonth);
     client.sqlite.prepare(`UPDATE companies SET latest_snapshot_month = @snapshotMonth, updated_at = @now
       WHERE latest_snapshot_month < @snapshotMonth AND id IN (
         SELECT c.id FROM nps_import_groups g JOIN companies c ON c.identity_key = g.identity_key

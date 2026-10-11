@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import { getCompanyBenchmark, getCompanyDetail, getCompanyHistory } from "@/lib/company-queries";
+import { getCompanyBenchmark, getCompanyDetail, getCompanyHistory, getIndustryComparison, getSizeCohortComparison } from "@/lib/company-queries";
 import { formatCurrency, formatIndustry, formatNumber, formatSnapshotMonth } from "@/lib/format";
 import { pensionRateForMonth, PENSION_RATE_SOURCE_URL } from "@/lib/pension";
 import { CompanyHistoryChart } from "@/components/CompanyHistoryChart";
@@ -10,6 +10,13 @@ import { ArrowLeft, ArrowUpRight, Building2, MapPin, BriefcaseBusiness, Users, W
 import { netSubscribers, percentageChange, previousMonthSnapshot } from "@/lib/company-metrics";
 import { CompanyBenchmarks } from "@/components/CompanyBenchmarks";
 import { companySocialMetadata } from "@/lib/social-metadata";
+import { CompanyConnections, EmploymentSummary } from "@/components/CompanyInsights";
+import { GitCompareArrows } from "lucide-react";
+import { SizeCohortComparison } from "@/components/SizeCohortComparison";
+import { employmentInsight } from "@/lib/company-insights";
+import { RecordCompanyVisit } from "@/components/RecentCompanies";
+import { observeWebPage } from "@/lib/observe-usage";
+import type { UsageEvent } from "@/lib/usage-metrics";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -26,10 +33,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return companySocialMetadata(loadCompany((await params).id));
 }
 
-export default async function CompanyPage({ params }: PageProps) {
+async function CompanyPage({ params }: PageProps, usage: UsageEvent) {
   const { id } = await params;
   const company = loadCompany(id);
   const companyId = company.id;
+  usage.company = { id: companyId, employeeCount: company.employeeCount, snapshotMonth: company.snapshotMonth };
   const history = getCompanyHistory(companyId);
   const benchmark = getCompanyBenchmark(companyId, company.snapshotMonth);
   const previous = previousMonthSnapshot(history, company.snapshotMonth);
@@ -40,9 +48,10 @@ export default async function CompanyPage({ params }: PageProps) {
 
   return (
     <main className="page-shell detail-page">
-      <Link href="/" className="back-link">
+      <RecordCompanyVisit id={company.id} name={company.name} />
+      <div className="detail-navigation"><Link href="/" className="back-link">
         <ArrowLeft size={16} aria-hidden="true" /> 검색으로 돌아가기
-      </Link>
+      </Link><Link href={`/compare?ids=${company.id}`} className="compare-action"><GitCompareArrows size={18} aria-hidden="true" />다른 회사와 비교</Link></div>
 
       <section className="company-header">
         <div className="company-identity">
@@ -83,7 +92,11 @@ export default async function CompanyPage({ params }: PageProps) {
       </section>
       <p className="detail-caveat"><Info size={15} aria-hidden="true" />국민연금 기반 추정치로, 실제 급여·재직 인원 및 입·퇴사와 다를 수 있습니다.</p>
 
-      <CompanyBenchmarks benchmark={benchmark} month={company.snapshotMonth} industry={company.industry} />
+      <EmploymentSummary history={history} />
+      <CompanyBenchmarks benchmark={benchmark} month={company.snapshotMonth} industry={company.industry}
+        peer={getIndustryComparison(company.id)} employeeCount={company.employeeCount} salary={company.estimatedAverageAnnualSalary} />
+      <SizeCohortComparison cohort={getSizeCohortComparison(companyId)} salary={company.estimatedAverageAnnualSalary}
+        growth={employmentInsight(history).employeeChangePercent} industry={company.industry} />
 
       <div className="detail-workspace">
         <CompanyHistoryChart history={history} />
@@ -111,6 +124,7 @@ export default async function CompanyPage({ params }: PageProps) {
         </section>
       </div>
 
+      <CompanyConnections company={company} />
       <section className="monthly-records">
         <details className="history-data">
           <summary>월별 원자료 · {history.length}개월</summary>
@@ -161,6 +175,8 @@ export default async function CompanyPage({ params }: PageProps) {
     </main>
   );
 }
+
+export default observeWebPage("detail", CompanyPage);
 
 function withUnit(value: number | null, unit: string) {
   return value === null ? "-" : `${formatNumber(value)}${unit}`;

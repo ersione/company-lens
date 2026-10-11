@@ -1,5 +1,18 @@
 import { expect, test } from "@playwright/test";
 
+test("broad daily-worker searches fail safely without blocking status or subsequent searches", async ({ page, request }) => {
+  const response = await request.get(`/api/v1/companies?q=${encodeURIComponent("(일용")}`, { timeout: 10000 });
+  expect(response.status()).toBe(400);
+  expect((await response.json()).error.message).toContain("검색 범위가 너무 넓습니다");
+  expect(response.headers()["cache-control"]).toBe("no-store");
+  await page.goto(`/?q=${encodeURIComponent("(일용")}`);
+  await expect(page.locator("main").getByRole("alert")).toContainText("더 구체적으로");
+  await page.goto(`/compare?q=${encodeURIComponent("(일용")}`);
+  await expect(page.locator("main").getByRole("alert")).toContainText("더 구체적으로");
+  expect((await request.get("/api/v1/status", { timeout: 5000 })).status()).toBe(200);
+  expect((await request.get(`/api/v1/companies?q=${encodeURIComponent("삼성전자")}`, { timeout: 10000 })).status()).toBe(200);
+});
+
 test("web search rejects invalid and repeated q without results or rendering errors", async ({ page }) => {
   const failures: string[] = [];
   const rscCacheHeaders: string[] = [];

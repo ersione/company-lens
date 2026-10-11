@@ -19,6 +19,10 @@ test("Slack and Kakao receive company metadata in head without JavaScript", asyn
       if (path !== "/") {
         expect($("head meta[property='og:title']").attr("content")).toContain(company.name);
         expect($("head meta[property='og:description']").attr("content")).toContain("국민연금 기반 추정치");
+      } else {
+        expect($("head meta[property='og:title']").attr("content")).toBe("숫자로 보는 회사 | Company Lens");
+        expect($("head meta[property='og:description']").attr("content")).toContain("숫자로 보는 회사");
+        expect($("head meta[name='twitter:description']").attr("content")).toContain("숫자로 보는 회사");
       }
     }
   }

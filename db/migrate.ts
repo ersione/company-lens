@@ -116,6 +116,35 @@ export function migrate(sqlite: Database.Database, options: { deferSnapshotIndex
       id INTEGER PRIMARY KEY CHECK (id = 1),
       rebuilt_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS industry_statistics (
+      industry TEXT PRIMARY KEY,
+      snapshot_month TEXT NOT NULL,
+      source_file_id INTEGER NOT NULL REFERENCES source_files(id),
+      employee_sample_count INTEGER NOT NULL,
+      salary_sample_count INTEGER NOT NULL,
+      median_employee_count REAL NOT NULL,
+      median_annual_salary REAL
+    );
+    CREATE TABLE IF NOT EXISTS company_name_observations (
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      first_seen_month TEXT NOT NULL,
+      last_seen_month TEXT NOT NULL,
+      PRIMARY KEY (company_id, name)
+    ) WITHOUT ROWID;
+    CREATE TABLE IF NOT EXISTS company_size_cohorts (
+      industry TEXT NOT NULL,
+      size_band INTEGER NOT NULL,
+      snapshot_month TEXT NOT NULL,
+      source_file_id INTEGER NOT NULL REFERENCES source_files(id),
+      previous_source_file_id INTEGER REFERENCES source_files(id),
+      employee_sample_count INTEGER NOT NULL,
+      salary_sample_count INTEGER NOT NULL,
+      growth_sample_count INTEGER NOT NULL,
+      median_annual_salary REAL,
+      median_employee_change_percent REAL,
+      PRIMARY KEY (industry, size_band)
+    ) WITHOUT ROWID;
   `);
   if (!options.deferSnapshotIndexes) createSnapshotIndexes(sqlite);
 }

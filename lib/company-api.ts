@@ -1,8 +1,12 @@
-import { getCompanyBenchmark, getCompanyDetail, getCompanyHistory, getDatasetStatus, searchCompanyPage } from "@/lib/company-queries";
+import { getCompanyBenchmark, getCompanyDetail, getCompanyHistory, getDatasetStatus, searchCompanyPage, getIndustryComparison, getSizeCohortComparison, getCompanyNames } from "@/lib/company-queries";
+import { getCompanyRecordCandidates } from "@/lib/company-queries";
+import { searchCompanySuggestions } from "@/lib/company-queries";
+import { SearchTooBroadError } from "@/lib/company-search-guard";
 import type { CompanySearchResult } from "@/lib/company-queries";
 import { netSubscribers, percentageChange, previousMonthSnapshot } from "@/lib/company-metrics";
 import { validateCompanySearch } from "@/lib/company-search-input";
 import { parseSearchOptions } from "@/lib/company-search-options";
+import { employmentInsight, monthOffset, parseComparisonIds, relatedNameQuery } from "@/lib/company-insights";
 
 export const apiMetadata = {
   source: "국민연금공단",
@@ -25,7 +29,7 @@ export function apiResponse(action: () => unknown) {
   try {
     return json({ data: action(), meta: apiMetadata });
   } catch (error) {
-    if (error instanceof ApiInputError) return json({ error: { code: "INVALID_REQUEST", message: error.message } }, 400);
+    if (error instanceof ApiInputError || error instanceof SearchTooBroadError) return json({ error: { code: "INVALID_REQUEST", message: error.message } }, 400);
     if (error instanceof CompanyNotFound) return json({ error: { code: "COMPANY_NOT_FOUND", message: "회사를 찾을 수 없습니다." } }, 404);
     console.error("Company Lens API failed", error);
     return json({ error: { code: "INTERNAL_ERROR", message: "데이터를 조회하지 못했습니다. 잠시 후 다시 시도하세요." } }, 500);
@@ -77,8 +81,8 @@ export function searchApi(request: Request) {
   const limit = positiveInteger(params.get("limit") ?? "5", "limit", 20);
   const parsed = parseSearchOptions(Object.fromEntries(params));
   if (parsed.error) throw new ApiInputError(parsed.error);
-  const { results, hasMore } = searchCompanyPage(query, parsed.options, limit);
-  return { query, limit, ...parsed.options, returnedCount: results.length, hasMore,
+  const { results, hasMore, totalCount, totalPages } = searchCompanyPage(query, parsed.options, limit);
+  return { query, limit, ...parsed.options, returnedCount: results.length, hasMore, totalCount, totalPages,
     companies: results.map(summary) };
 }
 
@@ -127,4 +131,35 @@ export function statusApi(request: Request) {
   const dataset = getDatasetStatus();
   return { latestSnapshotMonth: dataset?.snapshotMonth ?? null,
     latestSourceRowCount: dataset?.rowCount ?? null, importedAt: dataset?.importedAt ?? null };
+}
+
+export function insightsApi(request: Request, rawId: string) {
+  parameters(request, []);
+  const id = companyId(rawId);
+  const company = getCompanyDetail(id);
+  if (!company) throw new CompanyNotFound();
+  const history = company.snapshotMonth ? getCompanyHistory(id, {
+    from: monthOffset(company.snapshotMonth, -36), to: company.snapshotMonth
+  }) : [];
+  const query = relatedNameQuery(company.name);
+  return { companyId: id, employment: employmentInsight(history), industry: getIndustryComparison(id) ?? null,
+    sizeCohort: getSizeCohortComparison(id) ?? null,
+    observedNames: getCompanyNames(id), relatedQuery: query,
+    recordCandidates: getCompanyRecordCandidates(id),
+    relatedCandidates: query ? searchCompanySuggestions(query, 7).filter((row) => row.id !== id).slice(0, 6).map(summary) : [],
+    identityCaveat: "유사 이름은 동일 법인·계열사라는 뜻이 아닙니다. 명칭은 수집 관측값이며 법적 변경 이력이 아닙니다. 기존 적재분의 과거 명칭은 복원하지 않습니다." };
+}
+
+export function comparisonApi(request: Request) {
+  const params = parameters(request, ["ids"]);
+  const { ids, error } = parseComparisonIds(params.get("ids") ?? undefined, 2);
+  if (error) throw new ApiInputError(error);
+  const companies = ids.map((id) => {
+    const company = getCompanyDetail(id);
+    if (!company) throw new CompanyNotFound();
+    return { ...summary(company), employment: employmentInsight(company.snapshotMonth ? getCompanyHistory(id, {
+      from: monthOffset(company.snapshotMonth, -36), to: company.snapshotMonth
+    }) : []), benchmark: getCompanyBenchmark(id, company.snapshotMonth) ?? null };
+  });
+  return { companies, sameSnapshotMonth: new Set(companies.map((row) => row.snapshotMonth)).size === 1 };
 }

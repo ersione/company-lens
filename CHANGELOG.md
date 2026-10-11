@@ -1,6 +1,25 @@
 # Changelog
 
+- Add three-year employment summaries, complete twelve-month acquisition/loss totals and rule-based trend summaries.
+- Cache same-industry subscriber-size cohort salary/growth medians during import and benchmark rebuild (OpenAPI 1.3.0).
+
 ## Unreleased
+
+- Replace fixed example companies with private browser-local recent workplace visits, limited to five / 30 days, with individual/all deletion and safe storage failure handling; the local history is not transmitted.
+- Add backend-only daily web/API usage, search trends/outcomes, workplace popularity and subscriber-size trends, latency buckets and HTTP error metrics in a separate 90-day SQLite store, with bounded cardinality, deferred fail-open recording and a private `metrics:report` command.
+- Add `/admin` charts and channel/period filters, protected by matching the configured ID and password with stateless eight-hour signed cookies, same-origin POST checks and process-local attempt limiting. No account/auth database; credentials remain server-local.
+- Switch searched pages to a compact results-first layout, emphasizing the query and exact total while retaining the overview on the initial screen.
+- Add exact filtered result/page totals and numbered search navigation with first/last shortcuts; count before page retrieval in one read transaction (OpenAPI 1.5.0).
+- Hide single-canonical-month zero-subscriber workplaces from search and similar-name suggestions regardless of age, preserving detail/history and ignoring superseded revisions.
+- Exclude explicitly marked daily-worker workplaces with a latest count of zero from discovery regardless of age; retain positive/unknown daily-worker counts and direct histories.
+- Reject overly broad searches before synchronous SQLite latest-row lookups and sorting, with actionable web/comparison/API errors and safe optional suggestions.
+- Hide stale zero-subscriber records from web/API search and similar-name suggestions while retaining direct details and histories.
+- Show unverified earlier/later workplace record links using matching public identity hints, similar names and adjacent canonical observations, without stitching histories (OpenAPI 1.4.0).
+- Add shareable three-workplace comparisons and read-only comparison/insights API (OpenAPI 1.2.0).
+- Summarize exact year-over-year changes and contiguous subscriber trends without bridging missing months.
+- Precompute industry headcount/estimated-salary medians with independent 30-sample thresholds.
+- Preserve collected names on future imports, and label similar-name workplaces as unverified search candidates.
+- Align home heading, social metadata and preview image with "숫자로 보는 회사".
 
 - Integrate the current production application on top of the existing main history.
 - Add region and minimum-subscriber filters, relevance/subscriber sorting, and bounded search pagination to the web and API.

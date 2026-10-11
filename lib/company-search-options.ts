@@ -4,6 +4,17 @@ export const maxSearchPage = 1000;
 export type SearchOptions = { page: number; region: string; minEmployees: number | null; sort: "relevance" | "employees" };
 export const defaultSearchOptions: SearchOptions = { page: 1, region: "", minEmployees: null, sort: "relevance" };
 
+export function searchPageNumbers(page: number, totalPages: number): (number | "ellipsis")[] {
+  const last = Math.min(totalPages, maxSearchPage);
+  if (last <= 0) return [];
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
+  const current = Math.min(page, last);
+  const start = Math.max(1, Math.min(current - 1, last - 2));
+  const end = Math.min(last, Math.max(current + 1, 3));
+  const pages = [...new Set([1, ...Array.from({ length: end - start + 1 }, (_, i) => start + i), last])].sort((a,b) => a-b);
+  return pages.flatMap((value, i): (number | "ellipsis")[] => i && value - pages[i-1] > 1 ? ["ellipsis", value] : [value]);
+}
+
 export function parseSearchOptions(params: Record<string, string | string[] | undefined>) {
   const options = { ...defaultSearchOptions };
   for (const key of ["page", "region", "minEmployees", "sort"] as const) {

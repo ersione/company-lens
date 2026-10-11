@@ -34,12 +34,18 @@ test("benchmarks compare canonical active workplaces, retain ties and protect sm
     assert.equal(rows[35].industry_employee_top_percent, null, "unknown industry hidden");
     assert.equal(rows[36].salary_top_percent, null, "zero salary excluded");
     assert.equal(rows[37].salary_top_percent, null, "missing salary excluded");
+    const medians = db.prepare("SELECT * FROM industry_statistics").all() as { industry: string; median_employee_count: number; median_annual_salary: number }[];
+    assert.equal(medians.length, 1, "unknown and small industries excluded");
+    assert.equal(medians[0].industry, "제조업");
+    assert.equal(medians[0].median_employee_count, 17);
+    assert.equal(medians[0].median_annual_salary, 1200000);
     assert.ok(Math.abs(rows[37].employee_top_percent! - 100 / 38) < 1e-9);
     assert.equal(refreshCompanyBenchmarks(db, "2026-07"), 0);
     assert.deepEqual(db.prepare("SELECT * FROM company_benchmarks ORDER BY company_id").all(), rows);
     db.exec("CREATE TRIGGER reject_benchmarks BEFORE INSERT ON company_benchmarks BEGIN SELECT RAISE(ABORT,'test'); END;");
     assert.throws(() => refreshCompanyBenchmarks(db, "2026-08"), /test/);
     assert.deepEqual(db.prepare("SELECT * FROM company_benchmarks ORDER BY company_id").all(), rows, "refresh rolls back atomically");
+    assert.deepEqual(db.prepare("SELECT * FROM industry_statistics").all(), medians);
     db.exec(`DROP TRIGGER reject_benchmarks;
       INSERT INTO source_files (id,source_name,file_name,snapshot_month,checksum,row_count,imported_at,published_at)
         VALUES (3,'NPS','revision.csv','2026-08','three',1,'now','2026-09-24');
@@ -47,5 +53,25 @@ test("benchmarks compare canonical active workplaces, retain ties and protect sm
         VALUES (40,3,'2026-08','1',200,1900000);`);
     refreshMonthlyStatistics(db, "2026-08");
     assert.deepEqual(db.prepare("SELECT company_id,source_file_id FROM company_benchmarks").all(), [{ company_id: 40, source_file_id: 3 }]);
+    assert.deepEqual(db.prepare("SELECT * FROM industry_statistics").all(), [], "canonical revision replaces old medians");
+  } finally { db.close(); }
+});
+
+test("industry medians average central pairs and independently hide insufficient salary samples", () => {
+  const db = new Database(":memory:");
+  try {
+    migrate(db);
+    db.exec(`INSERT INTO source_files (id,source_name,file_name,snapshot_month,checksum,row_count,imported_at)
+      VALUES (1,'test','test.csv','2026-08','one',30,'now');`);
+    const company = db.prepare("INSERT INTO companies (id,identity_key,name,normalized_name,created_at,updated_at) VALUES (?, ?, ?, ?, 'now', 'now')");
+    const snapshot = db.prepare(`INSERT INTO company_snapshots (company_id,source_file_id,snapshot_month,subscription_status_code,employee_count,monthly_billed_amount,industry)
+      VALUES (?,1,'2026-08','1',?,?, '중간값업종')`);
+    for (let i = 1; i <= 30; i++) { company.run(i, String(i), String(i), String(i)); snapshot.run(i, i, i === 30 ? null : i * 9500); }
+    refreshMonthlyStatistics(db, "2026-08");
+    const select = () => db.prepare("SELECT median_employee_count,median_annual_salary,salary_sample_count FROM industry_statistics").get();
+    assert.deepEqual(select(), { median_employee_count: 15.5, median_annual_salary: null, salary_sample_count: 29 });
+    db.exec("UPDATE company_snapshots SET monthly_billed_amount = 285000 WHERE company_id = 30");
+    refreshMonthlyStatistics(db, "2026-08");
+    assert.deepEqual(select(), { median_employee_count: 15.5, median_annual_salary: 1200000, salary_sample_count: 30 });
   } finally { db.close(); }
 });

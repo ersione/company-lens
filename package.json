@@ -9,6 +9,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
+    "metrics:report": "tsx scripts/metrics-report.ts",
     "import:nps": "tsx scripts/import-nps.ts",
     "sync:nps-history": "tsx scripts/sync-nps-history.ts",
     "history:start-job": "tsx scripts/start-history-job.ts",

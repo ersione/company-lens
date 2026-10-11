@@ -1,5 +1,104 @@
 # Implementation Status
 
+## Password-Protected Admin Dashboard
+
+- `/admin` checks the signed session before loading aggregates; unauthorized HTML/RSC receives only the ID/password form. Both `ADMIN_USER_ID` and `ADMIN_PASSWORD` from the ignored project `.env` must match, with no auth/account database. The signing secret is kept in `.env.local`; no credential values are recorded here.
+- Eight-hour HttpOnly/Strict/host-only cookie scoped to `/admin`, Secure on public HTTPS; logout clears it. Bound request bodies, check exact HTTPS public/loopback origins, rate-limit login attempts in process memory, and apply private/no-store/noindex/frame-denial headers. LAN HTTP password submission is rejected. Temporary shared-credential limitations are documented; rotating the ID, password or secret invalidates sessions after restart.
+- Reuse Chart.js for daily traffic, keyword trends/ranking, workplace popularity, historical subscriber-size trends/shares, weighted processing time/p95 bucket bounds and 4xx/5xx charts. Period/channel filters, missing-data/error states and responsive controls; status checks and pagination do not inflate visitor/search-intent KPIs.
+- Verification: 63 unit/API tests, typecheck and isolated production build passed. Populated and empty dashboard browser checks passed; 1280/390/320px layouts and all populated chart canvases were verified. Regression coverage retains total company views across multiple observed size bands and checks that keyword columns fit without horizontal scrolling. Wrong ID, wrong password, missing/duplicate input, session tampering/expiry/rotation, login/logout, unauthenticated HTML/RSC and channel/period filters are covered.
+- Activated the verified build via a brief launchd restart, retaining `.next-before-admin-2026-10-11T20-14-02-086Z` for rollback. Local/public status returned 200; public HTTPS login/filter/logout/isolation checks passed with Secure cookies using the project `.env` credentials. Production loopback HTTP login returned 403. No business database/index/schedule changes or commit/push.
+
+## Backend Usage Metrics
+
+- Observe web page handlers and all six v1 API handlers separately; no browser beacon or public stats endpoint. Skip known web bots/prefetches and metadata; detail popularity is not inflated by nested/history/comparison reads.
+- Separate 90-day KST SQLite daily aggregates: normalized/redacted search trends and outcomes, successful workplace detail popularity and observed subscriber-size bands, handler latency histograms/average/max and HTTP 4xx/5xx. No IP/user ID/raw request log/local history collection. Bound new search/company keys and retain overflow totals.
+- Read-only operator JSON report: `npm run metrics:report -- 30`. Full scope, privacy controls, cache exclusions and measurement limitations are documented in `docs/usage-metrics.md`.
+- Verification: 58 unit/API tests, typecheck and isolated production build passed. Eight focused browser tests passed across recent history, responsive search and backend aggregate deltas. Corrected a test-only Headers union type and a prefetch fixture: Next requires `rsc: 1` alongside the router-prefetch header; actual router/purpose prefetches and known bots were confirmed excluded.
+- Activated the verified build with a brief launchd web restart; retained `.next-before-usage-metrics-2026-10-11T19-34-47-342Z` for rollback. Local/public status and public search returned 200. The read-only report confirmed live KST search-term and latency aggregates in the separate metrics database. Public recent-history isolation/deletion and local comparison desktop/mobile workflows also passed after activation. Pension data/indexes and collection schedules were unchanged; no commit/push.
+
+## Browser-Local Recent Visits
+
+- Replace fixed example company links with recent workplace visits on the initial screen only; hide the section for a new/empty browser. Successful detail mounts record ID, display name and visit timestamp; server rendering/prefetching does not record visits.
+- Use localStorage key `company-lens:recent-companies:v1`, at most five unique IDs, newest first. Revisit updates the name/time and moves the workplace first. Thirty-day expiry is enforced when records are read, with invalid/expired records cleaned on subsequent use.
+- Individual/all deletion, same-tab updates and cross-tab storage synchronization. Validate untrusted stored records, strip extra properties and tolerate disabled storage. No accounts, server sync, new endpoints or visit-history transmission; a shared browser profile shares this local history.
+- Service usage analytics were not part of the original recent-history change. The subsequent backend-only metrics feature above now collects requested search trends and aggregate origin requests, independently of private browser history. IPs/user identifiers remain excluded; infrastructure access logs are a separate concern.
+- Public verification revealed existing Cloudflare `/cdn-cgi/rum` beacons, independent of this app feature. No claim is made that the public site has no infrastructure analytics. Visit tests distinguish these pre-existing beacons from application POSTs and check that the local history key/visit timestamps are not transmitted.
+- The initial public test incorrectly rejected all POSTs and failed on those beacons. After scoping that assertion, the public persistence/profile isolation/cross-tab deletion workflow passed with no application POSTs or recent-history payloads. Cloudflare documents RUM's existing collection and lack of localStorage access at <https://developers.cloudflare.com/speed/observatory/rum-beacon/>; dashboard configuration/data has not been audited here.
+- Verification: 54 unit/API tests, typecheck and production build passed. Seven final browser tests cover persistence/revisit ordering, isolated profiles, same/cross-tab deletion, absent server-rendered history, no visit POSTs, malformed/expired records, blocked storage, mobile long-name wrapping, history charts, hydration and search-view regression. Screenshots were visually inspected; long names are limited to two lines with full-name tooltips.
+- Activated the verified build via a brief launchd web restart, retaining the previous build. Local/public status returned 200. No database/index changes, analytics deployment or commit/push.
+
+## Results-First Search Screen
+
+- Preserve introduction and dataset overview only before searching (fixed example links are now replaced by browser-local recent visits above). Search/error states use a compact search/filter toolbar; the Company Lens brand returns to the initial screen.
+- Results have their own H1 with an emphasized query, prominent exact count and secondary page totals. Keep a short National Pension estimate/source note, existing pagination, filters and empty/error handling. No query/API/database changes.
+- Verification: 53 unit/API tests, typecheck and production build passed. Ten targeted browser tests cover 1280/390/320px search submission, first-result viewport visibility, brand return, long/empty/invalid queries, filters/pagination, shortcuts, broad-query protection and hydration. PC/mobile screenshots were visually inspected without overflow or overlap.
+- Activated the verified build with a brief launchd web restart and retained the previous build. Local/public home, result HTML and status returned 200; the 390px search/brand-return browser workflow also passed against the public domain. No commit/push.
+
+## Exact Search Totals And Numbered Pagination
+
+- Search counts all visible matching workplaces before fetching the requested page. Count/list predicates are shared and both run inside one SQLite read transaction. Similar-name suggestions retain the bounded list-only path; no application count cache or database/index changes.
+- Web search shows exact result/page totals and numbered links including the first/last available page, current-page state, gaps and mobile wrapping. Filters/sort remain in links; beyond-result URLs retain empty lists/totals and offer a first-page link.
+- OpenAPI 1.5.0 adds `totalCount` and `totalPages`; empty results have zero pages, `hasMore` is `page < totalPages`, and page requests remain capped at 1000 even if the exact page total is larger. The 20,000 pre-filter candidate guard still runs before full count/list work.
+- Actual count plan uses FTS5 virtual-table MATCH, company/latest primary-key lookups and `company_snapshots_latest_idx` for earlier canonical observations. No full snapshot-table scan or count sorting. Measured count-only samples: Samsung 158–205ms, Hyundai 44ms, Samsung with Gyeonggi/50+ filter 86ms. Concurrent local build/tests can affect timings.
+- Current data: Samsung 408 visible workplaces / 21 pages at 20 per page; Hyundai 450 / 23; filtered Samsung 36 / 2. These totals can change after imports.
+- Verification: 53 unit/API tests, typecheck, production build and eight targeted browser tests passed. Checked exact totals, canonical-revision parity, zero/last/out-of-range pages, preserved filters, broad-query guard and 1280/390/320px pagination screenshots without overflow.
+- Activated the verified candidate via a brief launchd web restart, retaining the previous build. Local/public status, third-page Samsung search and OpenAPI 1.5.0 returned 200; public search sample was 399ms including network. No database/index changes or commit/push.
+- Repeated the numbered-page browser workflow against the public domain after activation: passed, including last-page navigation, out-of-range recovery and mobile bounds.
+
+## Single-Month Zero-Subscriber Discovery Filter
+
+- Also exclude latest-zero workplaces with only one canonical observation month regardless of age (OpenAPI 1.4.4). Apply before pagination to web/API searches and similar-name suggestions; keep direct details/history and earlier/later record links.
+- Test whether an earlier canonical month exists using `company_snapshots_latest_idx (company_id, snapshot_month)`; do not count all history, add indexes, delete data or rebuild FTS/latest metrics. Superseded revisions neither extend history nor make an otherwise hidden record eligible.
+- Positive/unknown counts and recent ordinary zero counts with multiple canonical months remain eligible. One observed month is not a company's lifetime or proof of same-month registration/withdrawal.
+- Example 3 has one 2026-08 observation, count/billed/joiners/departures zero, and subscription status `2` (withdrawn). This identifies the reported status, not the registration date or reason earlier observations are absent.
+- Official dataset documentation describes reporting cutoffs, billing-based movement counts and disclosure thresholds (3+ corporate / 10+ individual subscribers since July 2025): <https://www.data.go.kr/data/15083277/fileData.do>. Missing months can reflect disclosure/identity changes; do not infer a specific cause from one row.
+- Unit/API tests: 52 passed; typecheck and isolated production build passed. Representative direct queries returned Samsung in 154ms, 주식회사엑셈 in 69ms and omitted 신영인사이트 in 54ms on this machine; these are samples, not a latency guarantee.
+- Six targeted browser tests passed: recent singleton zero, recent daily-worker zero, stale zero, broad-query guard, filters and pagination. Activated the verified build with a brief launchd web restart; kept the previous build for rollback. Local/public status, searches, preserved direct detail and OpenAPI 1.4.4 returned 200, with excluded IDs absent and the main Samsung workplace retained. No database/raw data was deleted; no commit/push.
+
+## Broad Search Protection
+
+- Observed the web process still running while a status request timed out; restart restored status response. `(일용` yielded at least 20,001 FTS candidates in a bounded probe (11ms sample). The old synchronous query could materialize all candidates, look up latest rows and sort before applying LIMIT, blocking other web requests.
+- Reject more than 20,000 pre-filter name/number matches before those joins/sorts. The indexed preflight reads at most 20,001 row IDs, never a full count. UI/comparison show refinement guidance, API returns 400 INVALID_REQUEST with no-store, and optional related suggestions fail closed. The limit retains popular real company searches such as Samsung (17,527 raw name matches, many historical construction records).
+- This bounds candidate workload; it is not a worker-isolation, rate-limit or absolute query-time guarantee. Existing ingress limits remain an infrastructure concern.
+- Verification: 50 unit/API tests, typecheck and final production build passed. Nineteen existing browser tests passed; the new broad-search test passed after scoping its alert locator to main (excluding Next's route announcer). Checked web/comparison guidance, API 400/no-store, and healthy status plus a successful Samsung search immediately afterward.
+
+## Stale Zero-Subscriber Discovery Filter
+
+- Extended: zero-subscriber records explicitly marked `(일용)`, `(일용직)`, `/일용/`, `-일용-` or `[일용]` are excluded regardless of age (full-width parentheses accepted). This covers recent Samsung construction records such as 62114128. Positive/unknown daily-worker counts and direct detail/history remain intact; ordinary names containing 일용품 are not classified by substring alone.
+- Extension verification: 51 unit/API tests, typecheck, production build and four targeted browser tests passed (recent Samsung zero-count exclusion, preserved direct details/main company/positive daily-worker records, broad-query protection, filters and pagination). Query fixtures cover FTS/unprovisioned/latest-index parity, full-width markers and ordinary 일용품 names.
+- Search and similar-name suggestions exclude records whose latest canonical subscriber count is exactly zero and last observation is at least 12 months behind the latest canonical dataset month (latest source month fallback before statistics provisioning).
+- Preserve recent ordinary zero counts with multiple canonical months, unknown counts, positive historical counts, direct details/history, and earlier/later name candidates. Do not infer closure or exclude all construction/daily-worker names. The single-month rule above extends the original age-based policy.
+- Apply the filter before relevance/subscriber sorting, pagination and prefix-shortcut limits. Reuse latest-company primary-key lookups and FTS; no historical row counts, new indexes or database deletion.
+- Verified example 12261967 has one zero-subscriber observation in 2018-01; it no longer appears in discovery while its detail/history remain accessible.
+- Verification: 49 unit/API tests, typecheck, production build and all 19 browser tests passed. Covers the 12-month boundary, advancing dataset month, missing counts, recent zero counts, pagination, FTS/fallback/latest lookup parity and preserved direct details. Query plan still uses FTS and latest-company primary keys without a history scan.
+
+## Adjacent Record Candidates
+
+- Detail pages and insights API expose up to six earlier/later record candidates (OpenAPI 1.4.0).
+- Require matching nonempty public number/address, similar normalized names, and adjacent canonical observation ranges. Partial numbers/addresses are not unique; candidates are not confirmed renames or legal relationships.
+- Reuse provisioned registration FTS and indexed per-company snapshot lookups, with a 50-candidate pool guard. No new index or raw-data collection; no identities, histories, charts or aggregates are merged.
+- Bus mutual-aid records 888149 and 128813 are reciprocal candidates; each retains its own history.
+- Verification: 48 unit/API tests, typecheck, production build and all 18 browser tests passed. Reciprocal candidate links, separate history endpoints and 1280px/390px/320px wrapping were checked; candidate screenshots were visually inspected.
+
+## Employment and Size Cohorts
+
+- Added exact 36-month endpoint comparisons, complete trailing-12-month acquisition/loss totals,
+  and deterministic one-year/three-month trend text. Missing months are not bridged for totals or recent trends.
+- Added `company_size_cohorts`, keyed by industry/subscriber band. Latest canonical active workplaces
+  are grouped into 1-9 / 10-49 / 50-299 / 300-999 / 1000+ subscribers. Salary and year-over-year
+  growth medians independently require 30 valid observations; no legal size classification is inferred.
+- Benchmark rebuilds and imports refresh the cache transactionally. Revising the year-ago canonical
+  source also refreshes growth medians. Request handlers read indexed cached results only.
+- Company identities are not automatically merged across name changes. The bus mutual-aid Gyeonggi
+  records (IDs 888149 and 128813) share a partial registration number/address and adjacent observation
+  periods, but lack a verified full identifier; their histories remain separate.
+- Verification: 47 unit/API tests passed, production build and typecheck passed, and all 17 browser
+  tests passed after fixing long-name wrapping and pre-hydration canvas sizing. Desktop/390px/320px
+  cohort and employment screenshots were inspected; chart pixel/interaction tests also passed.
+- Provisioned 1,460 latest-month industry/size cohorts locally (1,238 with sufficient growth samples).
+  Lookup plan uses the benchmark primary key, snapshot source/company/month index, and cohort composite
+  primary key; no aggregate scan runs on requests. Existing FTS/search behavior is unchanged.
+
 ## Current MVP State
 
 This repository now contains a first-pass Company Lens MVP scaffold:
@@ -254,3 +353,15 @@ All UI salary language is framed as `국민연금 기반 추정치`. The values 
 - Reran all 39 unit/contract tests and all 14 Chrome browser tests successfully. A separate production build passed without replacing the running server build. `npm audit --omit=dev --audit-level=high` reported zero vulnerabilities.
 - Verified installed calendar entries, scheduled/prune arguments, ready latest-company metrics, FTS/statistics/benchmark tables and an empty importer lock table. Both local and public status endpoints returned HTTP 200 with the expected latest month.
 - Staged-file checks excluded raw data, databases and environment files; a narrow private-key/token-pattern scan found no candidates. Existing remote history is preserved and local main can advance by fast-forward without a force push.
+
+## Company Research Expansion (2026-10-11)
+
+- Added a shareable `/compare` view for up to three workplaces, search/add/remove controls, explicit per-workplace months and a warning for different months. Comparisons retain nulls and do not claim to compare whole corporations.
+- Added subscriber and estimated-salary changes against exactly twelve months earlier, plus a maximum twelve-month contiguous subscriber trend. Missing months/counts break the streak, zero denominators do not produce percentages, and the same helper powers web and API.
+- Added `industry_statistics`, keyed by industry and guarded by canonical month/source. Medians are precomputed atomically with existing benchmarks at import time, independently requiring 30 employee/salary samples. Provisioned 866 industry rows on the current database with the shared import lock; the lock was released after success. Requests do not calculate industry-wide aggregates. A sampled production query took approximately 27 ms including connection/migration overhead; this is not a latency guarantee. The actual plan uses the benchmark PK, snapshot source/company/month index and industry/monthly-statistics PKs, with no history scan.
+- Added indexed `company_name_observations` for names collected during future imports. Existing historical names cannot be reconstructed, observation month ranges are not legal rename dates, and masked-number renamed identities are never automatically stitched. Similar-name workplaces are bounded FTS search candidates, explicitly not confirmed corporate relationships.
+- Added unauthenticated read-only `/api/v1/compare` and `/api/v1/companies/{id}/insights`, with strict ID/query validation and OpenAPI 1.2.0 contracts. Existing detail/history contracts remain unchanged. API reference and README describe cohort, date, identity and missing-value semantics.
+- Verified the latest retained raw CSV has 22 columns and no large-company/SME/venture classification. Its corporation/individual code is not enterprise size. No inferred legal classification or new external source integration was added.
+- Updated the home headline, OG/Twitter metadata and preview image to "숫자로 보는 회사". Unit/API contract tests passed (45 total); browser regression coverage includes comparison actions, medians, summaries and mobile layouts in addition to existing search/charts/previews.
+- Monthly collection registration, raw retention and existing histories were not changed. No bot deployment, DNS/ingress changes, or automatic Git commit was performed.
+- Final production build and default typecheck passed. All 16 browser tests passed against the final isolated build; two expansion tests passed again with explicit 320/390px horizontal-scroll reachability checks. Desktop/mobile screenshots were inspected. Activated the validated build on the existing launchd service and verified public comparison HTML, both new APIs and OpenAPI 1.2.0 (HTTP 200); the web error log remained empty. Removed the temporary candidate/previous build directories after verification.

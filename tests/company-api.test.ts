@@ -16,6 +16,8 @@ import { GET as detail } from "@/app/api/v1/companies/[id]/route";
 import { GET as history } from "@/app/api/v1/companies/[id]/history/route";
 import { GET as status } from "@/app/api/v1/status/route";
 import { GET as specification } from "@/app/api/openapi.json/route";
+import { GET as insights } from "@/app/api/v1/companies/[id]/insights/route";
+import { GET as compare } from "@/app/api/v1/compare/route";
 import { apiResponse } from "@/lib/company-api";
 
 const request = (url: string) => new Request(`http://localhost${url}`);
@@ -24,6 +26,8 @@ const context = (id: string) => ({ params: Promise.resolve({ id }) });
 test("API routes and OpenAPI contract agree on local fixture data", async (t) => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "company-lens-api-"));
   const previousUrl = process.env.DATABASE_URL;
+  const previousMetrics = process.env.METRICS_DISABLED;
+  process.env.METRICS_DISABLED = "1";
   process.env.DATABASE_URL = path.join(directory, "test.sqlite");
   const client = createDb();
   try {
@@ -66,7 +70,9 @@ test("API routes and OpenAPI contract agree on local fixture data", async (t) =>
     await t.test("search is bounded, excludes private fields, and accepts numeric searches", async () => {
       const body = await check(search(request("/api/v1/companies?q=테스트&limit=1")), "SearchResponse");
       assert.equal(body.data.returnedCount, 1);
-      assert.equal(body.data.hasMore, true);
+      assert.equal(body.data.totalCount, 1);
+      assert.equal(body.data.totalPages, 1);
+      assert.equal(body.data.hasMore, false);
       assert.equal(body.data.companies[0].id, 1);
       assert.equal(body.meta.salaryBasis, "국민연금 기반 추정치");
       assert.equal((await check(search(request("/api/v1/companies?q=123-456")), "SearchResponse")).data.companies[0].id, 1);
@@ -87,13 +93,18 @@ test("API routes and OpenAPI contract agree on local fixture data", async (t) =>
       const second = (await check(search(request("/api/v1/companies?q=테스트&limit=1&page=2")), "SearchResponse")).data;
       assert.equal(first.page, 1);
       assert.equal(second.page, 2);
-      assert.notEqual(first.companies[0].id, second.companies[0].id);
+      assert.equal(second.totalCount, first.totalCount);
+      assert.equal(second.totalPages, first.totalPages);
+      assert.equal(first.companies[0].id, 1);
+      assert.deepEqual(second.companies, [], "single-month zero record is excluded before pagination");
       assert.equal(second.hasMore, false);
       const filtered = (await check(search(request("/api/v1/companies?q=테스트&region=서울특별시&minEmployees=10&sort=employees")), "SearchResponse")).data;
       assert.equal(filtered.region, "서울특별시");
       assert.equal(filtered.minEmployees, 10);
       assert.equal(filtered.sort, "employees");
       assert.deepEqual(filtered.companies.map((row: { id: number }) => row.id), [1]);
+      assert.equal(filtered.totalCount, 1);
+      assert.equal(filtered.totalPages, 1);
       assert.deepEqual((await check(search(request("/api/v1/companies?q=테스트&page=1000")), "SearchResponse")).data.companies, []);
     });
     await t.test("detail includes comparisons, cached percentiles, and handles nulls", async () => {
@@ -126,6 +137,34 @@ test("API routes and OpenAPI contract agree on local fixture data", async (t) =>
         await check(await history(request(`/api/v1/companies/1/history?${query}`), context("1")), "Error", 400);
       }
     });
+    await t.test("insights and comparison expose bounded honest facts under the OpenAPI contract", async () => {
+      const result = (await check(await insights(request("/api/v1/companies/1/insights"), context("1")), "InsightsResponse")).data;
+      assert.equal(result.employment.consecutiveMonths, 2);
+      assert.equal(result.employment.employeeDelta, null);
+      assert.equal(result.industry, null);
+      assert.equal(result.relatedCandidates.length, 0);
+      assert.deepEqual(result.observedNames, []);
+      const comparison = (await check(compare(request("/api/v1/compare?ids=1,3")), "ComparisonResponse")).data;
+      assert.equal(comparison.sameSnapshotMonth, false);
+      assert.deepEqual(comparison.companies.map((row: { id: number }) => row.id), [1, 3]);
+      for (const query of ["", "?ids=1", "?ids=1,1", "?ids=1,2,3,4", "?ids=1,2&ids=2,3", "?ids=1,2&x=y"]) {
+        await check(compare(request(`/api/v1/compare${query}`)), "Error", 400);
+      }
+      await check(compare(request("/api/v1/compare?ids=1,999")), "Error", 404);
+      await check(await insights(request("/api/v1/companies/999/insights"), context("999")), "Error", 404);
+      await check(await insights(request("/api/v1/companies/1/insights?q=abc"), context("1")), "Error", 400);
+      const addCompany = client.sqlite.prepare(`INSERT INTO companies (id,identity_key,name,normalized_name,created_at,updated_at)
+        VALUES (?, ?, '중간값표본', '중간값표본', 'now', 'now')`);
+      const addSnapshot = client.sqlite.prepare(`INSERT INTO company_snapshots (company_id,source_file_id,snapshot_month,subscription_status_code,industry,employee_count,monthly_billed_amount)
+        VALUES (?,1,'2026-08','1','비교업종',10,950000)`);
+      for (let id = 100; id < 130; id++) { addCompany.run(id, `median-${id}`); addSnapshot.run(id); }
+      client.sqlite.exec("UPDATE company_snapshots SET industry = '비교업종' WHERE company_id = 1 AND snapshot_month = '2026-08'");
+      refreshCompanyBenchmarks(client.sqlite, "2026-08");
+      const populated = (await check(await insights(request("/api/v1/companies/1/insights"), context("1")), "InsightsResponse")).data;
+      assert.equal(populated.industry.employeeSampleCount, 31);
+      assert.equal(populated.industry.medianEmployeeCount, 10);
+      assert.equal(populated.industry.medianAnnualSalary, 12000000);
+    });
     await t.test("invalid and missing IDs use consistent errors", async () => {
       for (const id of ["0", "-1", "1.5", "01", "1e2", "9007199254740992", "abc"]) {
         await check(await detail(request(`/api/v1/companies/${id}`), context(id)), "Error", 400);
@@ -152,6 +191,8 @@ test("API routes and OpenAPI contract agree on local fixture data", async (t) =>
       } finally { console.error = original; }
     });
   } finally {
+    if (previousMetrics === undefined) delete process.env.METRICS_DISABLED;
+    else process.env.METRICS_DISABLED = previousMetrics;
     client.sqlite.close();
     if (previousUrl === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = previousUrl;

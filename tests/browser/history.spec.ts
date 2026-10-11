@@ -40,13 +40,15 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
   });
 }
 
-test("company shortcuts keep the search field and result layout in sync", async ({ page }) => {
+test("recent visit shortcuts reopen the actual company detail", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/companies/177744");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('company-lens:recent-companies:v1'))).not.toBeNull();
   await page.goto("/");
   await page.getByRole("textbox", { name: "회사 검색" }).fill("수정한 검색어");
-  await page.getByRole("navigation", { name: "예시 검색어" }).getByRole("link", { name: "네이버" }).click();
-  await expect(page.getByRole("textbox", { name: "회사 검색" })).toHaveValue("네이버");
-  await expect(page.locator("a.result-row").first()).toBeVisible();
+  await page.locator('.recent-companies a[href="/companies/177744"]').click();
+  await expect(page).toHaveURL(/\/companies\/177744$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('나이키코리아');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/search-mobile.png", fullPage: true });
 });

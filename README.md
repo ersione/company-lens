@@ -1,5 +1,11 @@
 # Company Lens
 
+Company details include exact one-/three-year subscriber changes, trailing twelve-month
+acquisition/loss totals, and same-industry, similar-subscriber-size salary/growth comparisons.
+Run `npm run benchmarks:rebuild` once after upgrading to provision `company_size_cohorts`.
+Subsequent imports refresh this cache automatically, including revisions of the year-ago month.
+No aggregate rebuild runs from a page request. Subscriber bands are not legal company-size categories.
+
 Company Lens is a company intelligence product built from public employment and corporate datasets.
 
 The first version focuses on Korean public data, especially National Pension Service workplace data, to show company-level signals such as estimated average salary, employee count, hires, departures, and workforce trend.
@@ -34,6 +40,19 @@ Core features:
 - Employee count trend over time
 - Industry and address metadata
 - Clear source and calculation disclosure
+- Compare up to three workplaces at `/compare`, using shareable IDs in the URL
+- Exact year-over-year subscriber/salary changes and contiguous subscriber-change streaks
+- Industry median headcount and estimated salary differences, precomputed at data refresh
+- Prospectively collected workplace names and explicitly unverified similar-name search candidates
+
+For an existing database, run `npm run benchmarks:rebuild` once to provision industry medians.
+Subsequent imports update them atomically with company benchmarks. The rebuild shares the import lock.
+Name observations begin with future imports; the compact database does not retain old names in historical snapshots.
+Masked registration numbers and changed names are not automatically merged into a supposed corporate history.
+
+The NPS CSV has a corporation/individual workplace code, but no large/SME/venture classification.
+Subscriber-size filters are not legal enterprise classifications. SME status also depends on sales, assets and independence;
+do not infer it from headcount. See the [official SME criteria](https://www.mss.go.kr/site/smba/contents/view.do?menuCd=20103040000002024122824).
 
 Out of scope for the first cut:
 
@@ -110,9 +129,23 @@ Requires Node.js 22 or later.
 
 ## Search Filters And Pagination
 
-Web search supports region, minimum National Pension subscribers, relevance/subscriber sorting, and previous/next pages (20 results per page). Filter changes reset the page; URLs retain the selected conditions for reloads and browser history. Region uses the company's representative address, including historical Gangwon/Jeonbuk province names.
+Name/number searches with more than 20,000 pre-filter candidates are rejected before latest-row joins and sorting. Enter a more specific company name or public number; pagination/region/size parameters do not bypass this guard. Web/comparison views show an error and API returns `400 INVALID_REQUEST`. Optional similar-name suggestions fail closed without breaking company details.
 
-The API supports the same `region`, `minEmployees`, `sort`, and `page` parameters. Existing `q`/`limit` calls still work. Filters apply to canonical latest company snapshots before pagination; ties end with company ID for stable ordering. Search fetches one extra row to report `hasMore`, not a full-result count. Pages are capped at 1000; refine broad searches rather than requesting deeper offsets. Results can change after a data refresh.
+Search and similar-name discovery exclude zero-subscriber daily-worker records regardless of observation month when the name contains `(일용)`, `(일용직)`, `/일용/`, `-일용-` or `[일용]` (full-width parentheses accepted). Other zero-subscriber records are excluded when only one canonical observation month exists or their last observation is at least 12 months behind the latest canonical dataset month (latest source month fallback). Positive and unknown counts remain eligible, as do recent ordinary zero counts with multiple canonical months. This is a discovery filter, not a closure determination: direct details, history, rename candidates and stored data remain intact. Daily-worker names alone are not excluded. Filtering happens before sorting, limiting and pagination; no historical count scan or new index is needed.
+
+Web search supports region, minimum National Pension subscribers, relevance/subscriber sorting, exact result/page totals and numbered pages with first/last shortcuts (20 results per page). Filter changes reset the page; URLs retain the selected conditions for reloads and browser history. Region uses the company's representative address, including historical Gangwon/Jeonbuk province names.
+
+The initial screen keeps the introduction and dataset overview. Fixed company examples are replaced by recent visits, visible only after opening a company detail: at most five workplace IDs/names/timestamps in this browser's localStorage, no login/server sync or transmission of that local history. Entries expire after 30 days and are cleaned on subsequent use; revisits move to the front, and individual/all records can be deleted. Browser profiles/devices have separate records; anyone using the same profile can see them. Storage being unavailable does not prevent browsing.
+
+Backend-generated [service usage metrics](docs/usage-metrics.md) separately aggregate web/API requests, search terms/outcomes, popular workplaces and subscriber-size trends, handler latency and HTTP errors. They do not read localStorage or identify visitors. Aggregates live in a separate local SQLite database for 90 days. Use `npm run metrics:report -- 30` for a private JSON report; no public analytics endpoint is exposed. Origin cache hits and client-only navigations are not included.
+
+The protected `/admin` screen visualizes these metrics with 7/30/90-day and web/API filters. Both the configured ID and password must match; no account database is used. Configure server-only `ADMIN_USER_ID` and `ADMIN_PASSWORD` in git-ignored project `.env`, with a random 32+ character `COMPANY_LENS_ADMIN_SESSION_SECRET` in `.env.local`, then restart the web service. Use `https://companylens.ersione.com/admin`; LAN HTTP login is intentionally rejected. See [admin access](docs/usage-metrics.md#admin-access) for limitations.
+
+After searching, a compact search/filter toolbar leads directly into an emphasized query heading, exact result total and company list. The brand link returns to the initial screen; empty/error searches keep the compact layout, and results retain a National Pension estimate/source note.
+
+Discovery omits zero-subscriber workplaces with explicit daily-worker name markers, only one canonical observation month, or a latest observation at least 12 months behind the dataset. Positive/unknown counts remain eligible. Exclusions apply before pagination and to similar-name suggestions, not direct details/history or unverified earlier/later record links. These rules do not establish closure or a company's lifetime; public disclosure thresholds and identity changes can leave gaps.
+
+The API supports the same `region`, `minEmployees`, `sort`, and `page` parameters. Existing `q`/`limit` calls still work. Filters apply to canonical latest company snapshots before pagination; ties end with company ID for stable ordering. Search counts matching visible workplaces first, then fetches the requested page in the same SQLite read transaction. `totalCount` and `totalPages` are exact; `hasMore` compares the requested page to the total. There is no application count cache. Pages are capped at 1000 even when `totalPages` is larger; refine broad searches rather than requesting deeper offsets. Results can change after a data refresh.
 
 The previous `sync:nps`, `download:nps`, `rebuild:search-index`, Recharts component, and stored-salary schema have been superseded. Use the current commands above; no legacy index or importer runs alongside them.
 

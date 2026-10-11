@@ -1,5 +1,88 @@
 @import "tailwindcss";
 
+.header-compare { margin-left: auto; color: #0f766e; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.header-compare + .header-source { margin-left: 8px; }
+.detail-navigation { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.compare-action { display: inline-flex; align-items: center; gap: 8px; color: #0f766e; font-weight: 700; padding: 9px 12px; border: 1px solid #badbd5; border-radius: 6px; background: #f1faf6; }
+.employment-summary { border-top: 3px solid #277c98; background: #f3f8fb; padding: 24px; margin: 24px 0 36px; }
+.insight-heading { display: flex; gap: 10px; align-items: center; color: #245b70; margin-bottom: 18px; }
+.insight-heading h2 { font-size: 20px; margin: 0; color: #1b3039; }
+.employment-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.employment-summary-grid > div { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.employment-summary-grid span { color: #526477; font-size: 14px; }
+.employment-summary-grid strong { font-size: 23px; color: #245b70; overflow-wrap: anywhere; }
+.employment-summary-grid small { color: #667085; font-size: 13px; }
+.employment-narrative { font-size: 17px; font-weight: 600; color: #245b70; margin: 0 0 24px; }
+.employment-long-term { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; border-top: 1px solid #d9e5ec; margin-top: 24px; padding-top: 24px; }
+.employment-long-term > div { min-width: 0; }
+.employment-long-term span, .cohort-description { color: #526477; font-size: 15px; }
+.three-year-summary > strong { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; color: #245b70; font-size: 28px; margin-top: 8px; }
+.three-year-summary strong small { font-size: 18px; }
+.employment-long-term p { color: #526477; font-size: 14px; line-height: 1.7; margin: 10px 0 0; }
+.annual-movement dl { display: flex; flex-wrap: wrap; gap: 28px; margin: 10px 0 0; }
+.annual-movement dt { font-size: 14px; color: #526477; }
+.annual-movement dd { margin: 4px 0 0; font-size: 24px; font-weight: 700; color: #146c63; }
+.annual-movement div + div dd { color: #a05f27; }
+.size-cohort { margin: 32px 0; padding: 26px 0; border-top: 2px solid #0f766e; border-bottom: 1px solid var(--line); }
+.cohort-description { margin: -4px 0 20px; overflow-wrap: anywhere; }
+.cohort-comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.cohort-metric { min-width: 0; }
+.cohort-metric h3 { margin: 0 0 16px; font-size: 17px; }
+.cohort-metric dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; }
+.cohort-metric dt { color: #667085; font-size: 14px; }
+.cohort-metric dd { font-size: 24px; font-weight: 700; margin: 6px 0 0; overflow-wrap: anywhere; color: #0f766e; }
+.cohort-metric dl div + div dd { color: #526477; }
+.cohort-difference { font-size: 15px; font-weight: 600; color: #245b70; margin-bottom: 6px; }
+.cohort-metric > small { color: #667085; font-size: 13px; }
+@media (max-width: 700px) {
+  .employment-long-term, .cohort-comparison-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .cohort-metric + .cohort-metric { padding-top: 20px; border-top: 1px solid var(--line); }
+}
+.peer-median { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; padding-top: 12px; border-top: 1px solid #d9e5e7; }
+.peer-median span { color: #667085; }
+.peer-median strong { color: #253849; margin-left: 6px; }
+.peer-median b { color: #0f766e; }
+.company-connections { border-top: 1px solid var(--line); margin: 36px 0; padding-top: 28px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; }
+.company-connections ul, .compare-candidates { list-style: none; padding: 0; margin: 0 0 16px; }
+.observed-names li { border-bottom: 1px solid var(--line); padding: 12px 0; display: flex; flex-direction: column; gap: 4px; }
+.observed-names li span, .related-workplaces li span { font-size: 13px; color: var(--muted); }
+.related-workplaces li a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.related-workplaces li div { display: flex; flex-direction: column; min-width: 0; }
+.related-workplaces li strong, .observed-names strong { overflow-wrap: anywhere; }
+.observed-names > p { overflow-wrap: anywhere; }
+.record-candidates { margin-top: 24px; padding-top: 20px; border-top: 2px solid var(--accent); }
+.record-candidates h3 { margin: 0 0 10px; font-size: 18px; }
+.record-candidates .record-direction { color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+.record-candidates svg { flex-shrink: 0; }
+.related-workplaces li a:hover strong { color: var(--accent); }
+.compare-heading { margin: 30px 0 20px; }
+.compare-heading h1 { display: flex; align-items: center; gap: 10px; font-size: 30px; margin-bottom: 6px; }
+.compare-heading > span { color: var(--muted); font-size: 14px; }
+.compare-search { display: flex; border: 1px solid #91b7ba; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+.compare-search input { min-width: 0; flex: 1; border: 0; padding: 14px 16px; font: inherit; background: #fff; }
+.compare-search button { display: flex; align-items: center; justify-content: center; width: 56px; flex-shrink: 0; border: 0; background: #0f766e; color: #fff; cursor: pointer; }
+.compare-candidates li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.compare-candidates li > div { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.compare-candidates li span { font-size: 13px; color: var(--muted); }
+.compare-candidates li > a { width: 36px; height: 36px; display: grid; place-items: center; background: #eaf5f1; color: #0f766e; border-radius: 4px; flex-shrink: 0; }
+.comparison-scroll { overflow-x: auto; margin: 28px 0 20px; border-top: 3px solid #0f766e; }
+.comparison-search-results > summary { cursor: pointer; padding: 10px 0; color: #526477; font-size: 14px; }
+.comparison-table { border-collapse: collapse; width: 100%; min-width: 520px; table-layout: fixed; }
+.comparison-table th, .comparison-table td { padding: 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.comparison-table th:first-child { width: 155px; color: #526477; font-size: 14px; font-weight: 500; }
+.comparison-table thead th { background: #eff6f5; font-size: 18px; }
+.comparison-company { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+.comparison-company > a:last-child { display: grid; place-items: center; width: 28px; height: 28px; flex-shrink: 0; color: #667085; }
+.comparison-highlight td { color: #0f766e; font-size: 22px; font-weight: 800; white-space: nowrap; }
+.comparison-warning { padding: 12px 16px; border-left: 3px solid #b7802c; background: #fff9e9; color: #77561f; }
+@media (max-width: 700px) {
+  .employment-summary-grid, .company-connections { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .employment-summary-grid > div + div { border-top: 1px solid #d9e5ec; padding-top: 16px; }
+  .employment-summary { padding: 20px; }
+  .header-compare { font-size: 13px; }
+  .comparison-table th, .comparison-table td { padding: 12px; }
+}
+
 :root {
   color-scheme: light;
   --bg: #ffffff;
@@ -208,6 +291,44 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
 .section-heading span {
   color: var(--muted);
   font-size: 14px;
+}
+
+.search-results-view { padding-top: 24px; }
+.search-results-view .search-section { padding: 0 0 20px; gap: 12px; border-bottom: 1px solid #dce6e9; }
+.search-results-view .search-form { padding: 5px; box-shadow: none; }
+.search-results-view .search-form input { height: 44px; padding-top: 10px; padding-bottom: 10px; }
+.search-results-view .search-filters { margin-top: 12px; }
+.search-results-view .results-section { margin-top: 24px; }
+.search-results-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; margin-bottom: 10px; }
+.search-results-heading h1 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 0; min-width: 0; line-height: 1.45; }
+.search-results-heading .result-query { color: #087f83; font-size: 28px; font-weight: 800; word-break: keep-all; overflow-wrap: anywhere; min-width: 0; }
+.search-results-heading .result-heading-label { color: #425761; font-size: 17px; font-weight: 600; }
+.result-summary { text-align: right; }
+.result-total { display: flex; align-items: baseline; justify-content: end; gap: 5px; margin: 0; font-size: 14px; color: #526773; white-space: nowrap; }
+.result-total strong { color: #142f39; font-size: 30px; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.result-page-note { margin: 5px 0 0; color: #637984; font-size: 13px; white-space: nowrap; }
+.result-source-note { display: flex; align-items: center; gap: 6px; margin: 0 0 20px; font-size: 13px; }
+.result-source-note svg { flex-shrink: 0; color: #77928b; }
+.search-error-heading { margin: 0; font-size: 22px; }
+.recent-companies { min-width: 0; }
+.recent-companies-heading { display: flex; align-items: center; gap: 10px; }
+.recent-companies-heading h2 { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 16px; }
+.recent-companies-heading > span { margin-left: auto; color: #637984; font-size: 12px; white-space: nowrap; }
+.recent-companies button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; padding: 0; background: transparent; border: 0; border-radius: 6px; color: #637984; cursor: pointer; }
+.recent-companies button:hover { background: #fcecec; color: #a82d3a; }
+.recent-companies ul { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 12px 0 0; padding: 0; }
+.recent-companies li { display: flex; align-items: center; max-width: 100%; min-width: 0; border: 1px solid #d4e1e5; border-radius: 6px; background: #fff; }
+.recent-companies li a { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 10px 8px 10px 12px; color: #244b53; font-size: 14px; font-weight: 600; }
+.recent-companies li a:hover { color: #087f83; background: #eef7f6; }
+.recent-companies li a span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-width: 0; word-break: keep-all; overflow-wrap: anywhere; }
+.recent-companies svg { flex-shrink: 0; }
+.recent-companies [role="alert"] { color: #a82d3a; font-size: 13px; }
+@media (max-width: 600px) {
+  .search-results-view { padding-top: 16px; }
+  .search-results-heading .result-query { font-size: 24px; }
+  .search-results-heading .result-heading-label { font-size: 15px; }
+  .result-total strong { font-size: 26px; }
+  .result-source-note { align-items: start; font-size: 12px; }
 }
 
 .result-list {
@@ -518,6 +639,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
 .segmented-control button { border: 0; background: transparent; color: #475467; padding: 8px 12px; font-size: 14px; cursor: pointer; border-radius: 4px; min-height: 38px; }
 .segmented-control button[aria-pressed="true"] { background: #fff; color: var(--ink); font-weight: 700; }
 .history-chart { height: 320px; position: relative; margin: 22px 0; }
+.history-chart canvas { display: block; max-width: 100%; }
 .history-data summary { font-weight: 700; cursor: pointer; margin-bottom: 16px; }
 .history-table { max-height: 480px; }
 
@@ -712,8 +834,13 @@ th {
 .search-filters select { width: 100%; height: 44px; padding: 0 32px 0 12px; border: 1px solid #cbd8df; border-radius: 6px; background: #fff; color: #17343e; font: inherit; font-size: 15px; }
 .search-filters select:focus-visible { outline: 2px solid #087f83; outline-offset: 2px; }
 .filter-reset { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; color: #087f83; }
-.search-pagination { display: flex; justify-content: center; align-items: center; gap: 24px; margin: 28px 0 12px; }
-.search-pagination a, .search-pagination > span { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 76px; min-height: 44px; border: 1px solid #cedce2; border-radius: 6px; font-weight: 600; }
+.search-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 28px 0 12px; }
+.search-pagination a, .search-pagination > span, .page-numbers strong { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 1px solid #cedce2; border-radius: 6px; font-weight: 600; }
+.search-pagination > a, .search-pagination > span { min-width: 76px; }
+.page-numbers { display: flex; align-items: center; gap: 4px; }
+.page-numbers a, .page-numbers strong { min-width: 36px; padding: 0 4px; }
+.page-numbers strong { color: #fff; background: #087f83; border-color: #087f83; }
+.page-ellipsis { width: 24px; text-align: center; color: #6b7b86; }
 .search-pagination a { color: #087f83; background: #fff; }
 .search-pagination a:hover { background: #e8f4f3; border-color: #087f83; }
 .search-pagination > span { color: #94a3ad; border-color: #e2e9ed; }
@@ -724,5 +851,9 @@ th {
   .search-filters label:nth-child(3) { flex-grow: 0; }
   .search-filters select { font-size: 14px; padding-left: 9px; }
   .filter-reset { margin-left: auto; }
-  .search-pagination { gap: 16px; }
+  .search-pagination { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; justify-items: center; }
+  .search-pagination .page-previous { grid-column: 1; grid-row: 1; justify-self: start; }
+  .search-pagination .page-next { grid-column: 2; grid-row: 1; justify-self: end; }
+  .search-pagination .page-numbers { grid-column: 1 / -1; grid-row: 2; }
+  .page-numbers a, .page-numbers strong { min-width: 32px; }
 }

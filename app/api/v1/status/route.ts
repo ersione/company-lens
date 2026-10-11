@@ -1,8 +1,9 @@
-import { apiResponse, statusApi } from "@/lib/company-api";
+import { statusApi } from "@/lib/company-api";
+import { observedApiResponse } from "@/lib/observe-usage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request) {
-  return apiResponse(() => statusApi(request));
+  return observedApiResponse(request, "status", () => statusApi(request));
 }

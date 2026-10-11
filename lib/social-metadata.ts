@@ -3,10 +3,12 @@ import type { CompanyDetail } from "./company-queries";
 import { formatCurrency, formatNumber, formatSnapshotMonth } from "./format";
 
 export const publicOrigin = "https://companylens.ersione.com";
-export const siteDescription = "회사별 가입자 수, 추정 평균 연봉과 월별 고용 추이를 확인하세요. 국민연금 공개 데이터로 보는 회사 정보, Company Lens.";
+export const siteTitle = "숫자로 보는 회사 | Company Lens";
+export const siteDescription = "숫자로 보는 회사. 국민연금 공개 데이터로 살펴보는 가입자 수, 추정 평균 급여와 월별 고용 변화. 급여는 국민연금 기반 추정치입니다.";
+export const socialImageAlt = "Company Lens · 숫자로 보는 회사";
 
 export function socialMetadata(title: string, description: string, path: string): Metadata {
-  const image = { url: "/opengraph-image", width: 1200, height: 630, alt: "Company Lens · 국민연금 기반 회사 고용·급여 정보" };
+  const image = { url: "/opengraph-image", width: 1200, height: 630, alt: socialImageAlt };
   return {
     title,
     description,

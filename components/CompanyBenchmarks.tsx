@@ -1,21 +1,26 @@
 import { ArrowUpRight, ChartNoAxesCombined, UsersRound, Wallet } from "lucide-react";
 import type { CompanyBenchmark } from "@/lib/company-benchmarks";
 import { formatNumber, formatSnapshotMonth } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
+import type { IndustryComparison } from "@/lib/company-queries";
 
-export function CompanyBenchmarks({ benchmark, month, industry }: {
+export function CompanyBenchmarks({ benchmark, month, industry, peer: cohort, employeeCount, salary }: {
   benchmark: CompanyBenchmark | undefined; month: string | null; industry: string | null;
+  peer?: IndustryComparison; employeeCount?: number | null; salary?: number | null;
 }) {
   if (!benchmark) return null;
   const metrics = [
     { name: "가입자 규모", icon: UsersRound, national: benchmark.employeeTopPercent, peer: benchmark.industryEmployeeTopPercent,
-      count: benchmark.employeeSampleCount, peerCount: benchmark.industryEmployeeSampleCount, className: "size-benchmark" },
+      count: benchmark.employeeSampleCount, peerCount: benchmark.industryEmployeeSampleCount, className: "size-benchmark",
+      median: cohort?.medianEmployeeCount, value: employeeCount, salary: false },
     { name: "추정 평균 연봉", icon: Wallet, national: benchmark.salaryTopPercent, peer: benchmark.industrySalaryTopPercent,
-      count: benchmark.salarySampleCount, peerCount: benchmark.industrySalarySampleCount, className: "salary-benchmark" }
+      count: benchmark.salarySampleCount, peerCount: benchmark.industrySalarySampleCount, className: "salary-benchmark",
+      median: cohort?.medianAnnualSalary, value: salary, salary: true }
   ];
   return <section className="company-benchmarks" aria-labelledby="benchmarks-heading">
     <div className="benchmark-heading"><div><p className="eyebrow"><ChartNoAxesCombined size={15} aria-hidden="true" />MARKET POSITION</p>
       <h2 id="benchmarks-heading">다른 사업장과 비교하면</h2></div><span>{formatSnapshotMonth(month)} · 공개 사업장 기준</span></div>
-    <div className="benchmark-grid">{metrics.map(({ name, icon: Icon, national, peer, count, peerCount, className }) =>
+    <div className="benchmark-grid">{metrics.map(({ name, icon: Icon, national, peer, count, peerCount, className, median, value, salary: isSalary }) =>
       <article className={`benchmark-item ${className}`} key={name}>
         <div className="benchmark-title"><span className="benchmark-icon"><Icon size={19} aria-hidden="true" /></span><h3>{name}</h3><span>전체 사업장</span></div>
         <div className="benchmark-value">{national === null ? <strong>비교 불가</strong> : <><span>상위</span><strong>{topPercent(national)}<small>%</small></strong></>}</div>
@@ -28,6 +33,9 @@ export function CompanyBenchmarks({ benchmark, month, industry }: {
           {peer === null ? <span className="peer-unavailable">비교 자료 부족</span> : <strong><ArrowUpRight size={16} aria-hidden="true" />상위 {topPercent(peer)}%</strong>}
         </div>
         {peer !== null && <p className="peer-sample">동일 업종 {formatNumber(peerCount)}개 사업장 기준</p>}
+        {median != null && peer !== null && <div className="peer-median"><span>업종 중간값 <strong>{isSalary ? formatCurrency(median) : `${formatNumber(median)}명`}</strong></span>
+          {value != null && <b>{value === median ? "업종 중간값과 같음" : `중간값보다 ${isSalary ? formatCurrency(Math.abs(value - median)) : `${formatNumber(Math.abs(value - median))}명`} ${value > median ? "높음" : "낮음"}`}</b>}
+        </div>}
       </article>)}</div>
     <p className="benchmark-note">가입 상태인 사업장 중 유효한 값만 비교합니다. 연봉은 국민연금 기반 추정치로 소득 상한 등의 영향을 받습니다. 동일 업종은 비교 대상이 30곳 이상일 때 표시합니다.</p>
   </section>;

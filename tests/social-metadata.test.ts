@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { companySocialMetadata, publicOrigin, siteDescription, socialMetadata } from "../lib/social-metadata";
+import { companySocialMetadata, publicOrigin, siteTitle, siteDescription, socialImageAlt, socialMetadata } from "../lib/social-metadata";
 import type { CompanyDetail } from "../lib/company-queries";
 
 const company: CompanyDetail = {
@@ -30,7 +30,12 @@ test("missing values are omitted and zero remains valid in previews", () => {
 
 test("home preview uses the fixed public origin and shared image", () => {
   assert.equal(publicOrigin, "https://companylens.ersione.com");
-  const metadata = socialMetadata("Company Lens", siteDescription, "/");
+  const metadata = socialMetadata(siteTitle, siteDescription, "/");
+  assert.equal(metadata.title, "숫자로 보는 회사 | Company Lens");
+  assert.match(metadata.description!, /숫자로 보는 회사/);
+  assert.equal(metadata.openGraph?.title, metadata.title);
+  assert.equal(metadata.openGraph?.description, metadata.description);
+  assert.equal(metadata.twitter?.description, metadata.description);
   assert.equal(metadata.alternates?.canonical, "/");
-  assert.deepEqual(metadata.openGraph?.images, [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Company Lens · 국민연금 기반 회사 고용·급여 정보" }]);
+  assert.deepEqual(metadata.openGraph?.images, [{ url: "/opengraph-image", width: 1200, height: 630, alt: socialImageAlt }]);
 });

@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { defaultSearchOptions, parseSearchOptions, regionPrefixes, searchHref } from "../lib/company-search-options";
+import { defaultSearchOptions, parseSearchOptions, regionPrefixes, searchHref, searchPageNumbers } from "../lib/company-search-options";
+
+test("numbered pagination handles empty, short, middle, last and capped pages", () => {
+  assert.deepEqual(searchPageNumbers(1, 0), []);
+  assert.deepEqual(searchPageNumbers(1, 1), [1]);
+  assert.deepEqual(searchPageNumbers(3, 5), [1,2,3,4,5]);
+  assert.deepEqual(searchPageNumbers(1, 21), [1,2,3,"ellipsis",21]);
+  assert.deepEqual(searchPageNumbers(10, 21), [1,"ellipsis",9,10,11,"ellipsis",21]);
+  assert.deepEqual(searchPageNumbers(21, 21), [1,"ellipsis",19,20,21]);
+  assert.deepEqual(searchPageNumbers(1000, 21), [1,"ellipsis",19,20,21]);
+  assert.deepEqual(searchPageNumbers(1000, 2000), [1,"ellipsis",998,999,1000]);
+});
 
 test("search options validate enums, duplicates, and bounded positive integers", () => {
   assert.deepEqual(parseSearchOptions({}).options, defaultSearchOptions);

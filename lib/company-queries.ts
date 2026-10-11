@@ -1,4 +1,6 @@
 import { createDb } from "@/db/client";
+import { findCompanyRecordCandidates } from "@/lib/company-record-candidates";
+import { maxSearchCandidates, SearchTooBroadError } from "@/lib/company-search-guard";
 import { migrate } from "@/db/migrate";
 import type { Distribution } from "@/db/schema";
 import { searchIndexMatch } from "@/lib/company-search-index";
@@ -6,6 +8,7 @@ import { estimatedMonthlySalarySql } from "@/lib/pension";
 import type { CompanyBenchmark } from "@/lib/company-benchmarks";
 import { regionPrefixes, type SearchOptions } from "@/lib/company-search-options";
 import { canonicalSnapshotSql, hasCompanyLatest } from "@/lib/company-latest";
+import { sizeBandSql, type SizeCohortComparison } from "@/lib/company-size-cohorts";
 
 const monthlySalary = estimatedMonthlySalarySql("s");
 
@@ -41,6 +44,10 @@ export type SnapshotHistory = {
   departures: number | null;
 };
 
+export function getCompanyRecordCandidates(id: number) {
+  return withDatabase((sqlite) => findCompanyRecordCandidates(sqlite, id));
+}
+
 function withDatabase<T>(callback: (sqlite: ReturnType<typeof createDb>["sqlite"]) => T) {
   const client = createDb();
   try {
@@ -49,6 +56,45 @@ function withDatabase<T>(callback: (sqlite: ReturnType<typeof createDb>["sqlite"
   } finally {
     client.sqlite.close();
   }
+}
+
+export type IndustryComparison = { snapshotMonth: string; employeeSampleCount: number; salarySampleCount: number;
+  medianEmployeeCount: number; medianAnnualSalary: number | null };
+
+export function getSizeCohortComparison(id: number) {
+  return withDatabase((sqlite) => sqlite.prepare(`SELECT g.snapshot_month AS snapshotMonth, g.size_band AS sizeBand,
+    g.employee_sample_count AS employeeSampleCount, g.salary_sample_count AS salarySampleCount,
+    g.growth_sample_count AS growthSampleCount, g.median_annual_salary AS medianAnnualSalary,
+    g.median_employee_change_percent AS medianEmployeeChangePercent
+    FROM company_benchmarks b JOIN company_snapshots s ON s.company_id = b.company_id
+      AND s.source_file_id = b.source_file_id AND s.snapshot_month = b.snapshot_month
+    JOIN company_size_cohorts g ON g.industry = s.industry AND g.size_band = ${sizeBandSql("s.employee_count")}
+      AND g.snapshot_month = b.snapshot_month AND g.source_file_id = b.source_file_id
+    JOIN monthly_statistics m ON m.snapshot_month = g.snapshot_month AND m.source_file_id = g.source_file_id
+    LEFT JOIN monthly_statistics p ON p.snapshot_month = strftime('%Y-%m', g.snapshot_month || '-01', '-12 months')
+    WHERE b.company_id = ? AND g.previous_source_file_id IS p.source_file_id
+      AND g.snapshot_month = (SELECT MAX(snapshot_month) FROM monthly_statistics)`)
+    .get(id) as SizeCohortComparison | undefined);
+}
+
+export function getIndustryComparison(id: number) {
+  return withDatabase((sqlite) => sqlite.prepare(`SELECT i.snapshot_month AS snapshotMonth,
+    i.employee_sample_count AS employeeSampleCount, i.salary_sample_count AS salarySampleCount,
+    i.median_employee_count AS medianEmployeeCount, i.median_annual_salary AS medianAnnualSalary
+    FROM company_benchmarks b JOIN company_snapshots s ON s.company_id = b.company_id
+      AND s.source_file_id = b.source_file_id AND s.snapshot_month = b.snapshot_month
+    JOIN industry_statistics i ON i.industry = s.industry AND i.source_file_id = b.source_file_id
+      AND i.snapshot_month = b.snapshot_month
+    JOIN monthly_statistics m ON m.snapshot_month = b.snapshot_month AND m.source_file_id = b.source_file_id
+    WHERE b.company_id = ?`).get(id) as IndustryComparison | undefined);
+}
+
+export function getCompanyNames(id: number) {
+  return withDatabase((sqlite) => sqlite.prepare(`SELECT name, first_seen_month AS firstSeenMonth,
+    last_seen_month AS lastSeenMonth FROM company_name_observations WHERE company_id = ?
+    ORDER BY last_seen_month DESC, first_seen_month DESC, name LIMIT 30`).all(id) as {
+      name: string; firstSeenMonth: string; lastSeenMonth: string;
+    }[]);
 }
 
 export function getCompanyBenchmark(id: number, month: string | null) {
@@ -71,14 +117,52 @@ export function getDatasetStatus() {
 }
 
 export function searchCompanyPage(query: string, options: SearchOptions, limit = 20) {
-  const matches = searchCompanies(query, limit + 1, { ...options, offset: (options.page - 1) * limit });
-  return { results: matches.slice(0, limit), hasMore: matches.length > limit };
+  return withDatabase((sqlite) => sqlite.transaction(() => {
+    const { results, totalCount } = query.trim()
+      ? queryCompanies(sqlite, query, limit, { ...options, offset: (options.page - 1) * limit }, true)
+      : { results: [], totalCount: 0 };
+    const totalPages = Math.ceil(totalCount / limit);
+    return { results, totalCount, totalPages, hasMore: options.page < totalPages };
+  })());
+}
+
+export function searchCompanySuggestions(query: string, limit = 7) {
+  try { return searchCompanies(query, limit); }
+  catch (error) {
+    if (error instanceof SearchTooBroadError) return [];
+    throw error;
+  }
 }
 
 export function searchCompanies(query: string, limit = 20, options: Partial<SearchOptions> & { offset?: number } = {}) {
-  return withDatabase((sqlite) => {
+  return withDatabase((sqlite) => queryCompanies(sqlite, query, limit, options).results);
+}
+
+function queryCompanies(sqlite: ReturnType<typeof createDb>["sqlite"], query: string, limit: number,
+  options: Partial<SearchOptions> & { offset?: number }, countResults = false) {
     const normalizedQuery = `%${query.trim().toLocaleLowerCase("ko-KR")}%`;
     const registrationQuery = /^[\d\s-]+$/.test(query.trim()) ? query.replace(/\D/g, "") : "";
+    const { cutoff } = sqlite.prepare(`SELECT strftime('%Y-%m', COALESCE(
+      (SELECT MAX(snapshot_month) FROM monthly_statistics),
+      (SELECT MAX(snapshot_month) FROM source_files)) || '-01', '-12 months') AS cutoff`)
+      .get() as { cutoff: string | null };
+    // Suppress zero-subscriber daily-worker records, not companies with a similar ordinary name.
+    const markedName = "REPLACE(REPLACE(c.name, '（', '('), '）', ')')";
+    const dailyWorker = `(${markedName} LIKE '%(일용)%' OR ${markedName} LIKE '%(일용직)%'
+      OR c.name LIKE '%/일용/%' OR c.name LIKE '%-일용-%' OR c.name LIKE '%[일용]%')`;
+    const visible = `(s.employee_count IS NOT 0 OR s.snapshot_month IS NULL OR s.snapshot_month > ? OR ? IS NULL)
+      AND NOT (s.employee_count IS 0 AND ${dailyWorker})
+      AND NOT (s.employee_count IS 0 AND NOT EXISTS (
+        SELECT 1 FROM company_snapshots s2
+        WHERE s2.company_id = c.id AND s2.snapshot_month < s.snapshot_month AND ${canonicalSnapshot}
+      ))`;
+    const latestJoin = hasCompanyLatest(sqlite)
+      ? "LEFT JOIN company_latest s ON s.company_id = c.id"
+      : `LEFT JOIN company_snapshots s ON s.id = (
+          SELECT s2.id FROM company_snapshots s2
+          WHERE s2.company_id = c.id AND ${canonicalSnapshot}
+          ORDER BY s2.snapshot_month DESC, s2.id DESC LIMIT 1
+        )`;
     if (!query.trim()) {
       const months = sqlite.prepare(`SELECT DISTINCT snapshot_month AS month
         FROM company_snapshots ORDER BY snapshot_month DESC`).all() as { month: string }[];
@@ -87,9 +171,10 @@ export function searchCompanies(query: string, limit = 20, options: Partial<Sear
           `
           WITH candidates AS MATERIALIZED (
             SELECT c.id FROM companies c INDEXED BY companies_name_order_idx
+            ${latestJoin}
             WHERE (SELECT s2.snapshot_month FROM company_snapshots s2
               WHERE s2.company_id = c.id AND ${canonicalSnapshot}
-              ORDER BY s2.snapshot_month DESC, s2.id DESC LIMIT 1) IS ?
+              ORDER BY s2.snapshot_month DESC, s2.id DESC LIMIT 1) IS ? AND ${visible}
             ORDER BY c.name ASC, c.id ASC LIMIT ?
           )
           SELECT
@@ -118,9 +203,9 @@ export function searchCompanies(query: string, limit = 20, options: Partial<Sear
       const results: CompanySearchResult[] = [];
       for (const month of [...months.map(({ month }) => month), null]) {
         if (results.length >= limit) break;
-        results.push(...selectPage.all(month, limit - results.length) as CompanySearchResult[]);
+        results.push(...selectPage.all(month, cutoff, cutoff, limit - results.length) as CompanySearchResult[]);
       }
-      return results;
+      return { results, totalCount: results.length };
     }
 
     const indexMatch = searchIndexMatch(query, registrationQuery);
@@ -131,11 +216,11 @@ export function searchCompanies(query: string, limit = 20, options: Partial<Sear
     const prefixEnd = `${prefix}\uffff`;
     // Prefix matches always rank ahead of contains matches. If they fill the page,
     // short searches can avoid a full scan without changing the top results.
-    const prefixOnly = !indexed && !registrationQuery && !options.region && !options.minEmployees
+    const prefixOnly = !countResults && !indexed && !registrationQuery && !options.region && !options.minEmployees
       && !options.offset && options.sort !== "employees" && !/[%_]/.test(prefix)
-      && sqlite.prepare(`SELECT id FROM companies INDEXED BY companies_name_idx
-        WHERE normalized_name >= ? AND normalized_name < ? LIMIT ?`)
-        .all(prefix, prefixEnd, limit).length === limit;
+      && sqlite.prepare(`SELECT c.id FROM companies c INDEXED BY companies_name_idx ${latestJoin}
+        WHERE c.normalized_name >= ? AND c.normalized_name < ? AND ${visible} LIMIT ?`)
+        .all(prefix, prefixEnd, cutoff, cutoff, limit).length === limit;
     const matches = prefixOnly
       ? `SELECT id FROM companies INDEXED BY companies_name_idx WHERE normalized_name >= ? AND normalized_name < ?`
       : indexed
@@ -145,25 +230,33 @@ export function searchCompanies(query: string, limit = 20, options: Partial<Sear
              OR (? != '' AND registration_number LIKE ?)`;
     const matchArguments = prefixOnly ? [prefix, prefixEnd] : indexed ? [indexMatch]
       : [normalizedQuery, `%${query.trim()}%`, registrationQuery, `%${registrationQuery}%`];
+    // Bound discovery before materialization, random latest-row lookups and sorting.
+    const { count } = sqlite.prepare(`SELECT COUNT(*) AS count FROM (${matches} LIMIT ?)`)
+      .get(...matchArguments, maxSearchCandidates + 1) as { count: number };
+    if (count > maxSearchCandidates) throw new SearchTooBroadError();
     const prefixes = regionPrefixes(options.region ?? "");
     const regionClause = prefixes.length ? `AND (${prefixes.map(() => "c.address LIKE ?").join(" OR ")})` : "";
     const order = options.sort === "employees" ? "s.employee_count DESC, s.snapshot_month DESC, c.name ASC, c.id ASC"
       : `CASE WHEN c.normalized_name = ? THEN 0 WHEN c.normalized_name LIKE ? THEN 1 ELSE 2 END,
           LENGTH(c.name) ASC, s.employee_count DESC, s.snapshot_month DESC, c.name ASC, c.id ASC`;
-    const latestJoin = hasCompanyLatest(sqlite)
-      ? "LEFT JOIN company_latest s ON s.company_id = c.id"
-      : `LEFT JOIN company_snapshots s ON s.id = (
-          SELECT s2.id FROM company_snapshots s2
-          WHERE s2.company_id = c.id AND ${canonicalSnapshot}
-          ORDER BY s2.snapshot_month DESC, s2.id DESC LIMIT 1
-        )`;
 
-    return sqlite
+    const filtered = `FROM matches matched JOIN companies c ON c.id = matched.id
+      ${latestJoin}
+      WHERE ${visible} AND (? IS NULL OR s.employee_count >= ?) ${regionClause}`;
+    const filterArguments = [...matchArguments, cutoff, cutoff, options.minEmployees ?? null,
+      options.minEmployees ?? null, ...prefixes.map((value) => `${value}%`)];
+    const totalCount = countResults
+      ? (sqlite.prepare(`WITH matches AS MATERIALIZED (${matches}) SELECT COUNT(*) AS count ${filtered}`)
+          .get(...filterArguments) as { count: number }).count
+      : null;
+    if (totalCount === 0 || (totalCount !== null && (options.offset ?? 0) >= totalCount)) {
+      return { results: [], totalCount: totalCount ?? 0 };
+    }
+
+    const results = sqlite
       .prepare(
         `
-        WITH matches AS MATERIALIZED (
-          ${matches}
-        )
+        WITH matches AS MATERIALIZED (${matches})
         SELECT
           c.id,
           c.name,
@@ -174,17 +267,14 @@ export function searchCompanies(query: string, limit = 20, options: Partial<Sear
           (${monthlySalary}) * 12 AS estimatedAverageAnnualSalary,
           s.new_joiners AS newJoiners,
           s.departures
-        FROM matches matched JOIN companies c ON c.id = matched.id
-        ${latestJoin}
-        WHERE (? IS NULL OR s.employee_count >= ?) ${regionClause}
+        ${filtered}
         ORDER BY ${order}
         LIMIT ? OFFSET ?
       `
       )
-      .all(...matchArguments, options.minEmployees ?? null, options.minEmployees ?? null,
-        ...prefixes.map((value) => `${value}%`),
+      .all(...filterArguments,
         ...(options.sort === "employees" ? [] : [prefix, `${prefix}%`]), limit, options.offset ?? 0) as CompanySearchResult[];
-  });
+    return { results, totalCount: totalCount ?? results.length };
 }
 
 export function getCompanyDetail(id: number) {

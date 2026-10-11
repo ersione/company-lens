@@ -1,4 +1,4 @@
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const sourceFiles = sqliteTable(
@@ -68,6 +68,24 @@ export const companySnapshots = sqliteTable(
 );
 
 export type Company = typeof companies.$inferSelect;
+export const companySizeCohorts = sqliteTable("company_size_cohorts", {
+  industry: text("industry").notNull(), sizeBand: integer("size_band").notNull(),
+  snapshotMonth: text("snapshot_month").notNull(), sourceFileId: integer("source_file_id").notNull().references(() => sourceFiles.id),
+  previousSourceFileId: integer("previous_source_file_id").references(() => sourceFiles.id),
+  employeeSampleCount: integer("employee_sample_count").notNull(), salarySampleCount: integer("salary_sample_count").notNull(),
+  growthSampleCount: integer("growth_sample_count").notNull(), medianAnnualSalary: real("median_annual_salary"),
+  medianEmployeeChangePercent: real("median_employee_change_percent")
+}, (table) => [primaryKey({ columns: [table.industry, table.sizeBand] })]);
+export const industryStatistics = sqliteTable("industry_statistics", {
+  industry: text("industry").primaryKey(), snapshotMonth: text("snapshot_month").notNull(),
+  sourceFileId: integer("source_file_id").notNull().references(() => sourceFiles.id),
+  employeeSampleCount: integer("employee_sample_count").notNull(), salarySampleCount: integer("salary_sample_count").notNull(),
+  medianEmployeeCount: real("median_employee_count").notNull(), medianAnnualSalary: real("median_annual_salary")
+});
+export const companyNameObservations = sqliteTable("company_name_observations", {
+  companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  name: text("name").notNull(), firstSeenMonth: text("first_seen_month").notNull(), lastSeenMonth: text("last_seen_month").notNull()
+}, (table) => [primaryKey({ columns: [table.companyId, table.name] })]);
 export const companyLatest = sqliteTable("company_latest", {
   companyId: integer("company_id").primaryKey().references(() => companies.id, { onDelete: "cascade" }),
   snapshotId: integer("snapshot_id").notNull(),
