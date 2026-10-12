@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { isDailyWorkerWorkplace } from "../../lib/daily-worker";
 
 test("recent single-month zero workplaces are omitted without deleting detail or history", async ({ page, request }) => {
   const query = encodeURIComponent('신영인사이트');
@@ -17,34 +18,36 @@ test("recent single-month zero workplaces are omitted without deleting detail or
   ]);
 });
 
-test("Samsung daily-worker zero records are excluded even when observed recently", async ({ page, request }) => {
+test("daily-worker records and complete histories are removed while Samsung headquarters remains", async ({ page, request }) => {
   const query = encodeURIComponent('삼성전자로지텍');
   const response = await request.get(`/api/v1/companies?q=${query}&limit=20`);
   expect(response.status()).toBe(200);
   const rows = (await response.json()).data.companies as { id: number; name: string; employeeCount: number | null }[];
   expect(rows.some((row) => row.id === 130217)).toBe(true);
-  expect(rows.some((row) => row.name.includes('일용') && (row.employeeCount ?? 0) > 0)).toBe(true);
-  expect(rows.some((row) => row.name.includes('일용') && row.employeeCount === 0)).toBe(false);
+  expect(rows.some((row) => isDailyWorkerWorkplace(row.name))).toBe(false);
   expect(rows.map((row) => row.id)).not.toContain(62114128);
   await page.goto(`/?q=${query}`);
   await expect(page.locator('a[href="/companies/62114128"]')).toHaveCount(0);
   await expect(page.locator('a[href="/companies/130217"]')).toBeVisible();
-  const detail = await request.get('/api/v1/companies/62114128');
-  expect(detail.status()).toBe(200);
-  expect((await detail.json()).data.employeeCount).toBe(0);
+  for (const id of [62114128,41903075,590112,43903861]) {
+    expect((await request.get(`/api/v1/companies/${id}`)).status()).toBe(404);
+    expect((await request.get(`/api/v1/companies/${id}/history`)).status()).toBe(404);
+  }
+  const english = await request.get('/api/v1/companies?q=tving');
+  expect(english.status()).toBe(200);
+  expect((await english.json()).data.totalCount).toBe(0);
 });
 
-test("stale zero-subscriber construction records stay out of search but remain accessible", async ({ page, request }) => {
+test("old explicitly daily-worker construction records are removed from search and detail", async ({ page, request }) => {
   const response = await request.get(`/api/v1/companies?q=${encodeURIComponent("NIKEGANGNAMRemoeling")}&limit=20`);
   expect(response.status()).toBe(200);
   expect((await response.json()).data.companies.map((row: { id: number }) => row.id)).not.toContain(12261967);
   await page.goto(`/?q=${encodeURIComponent("NIKEGANGNAMRemoeling")}`);
   await expect(page.locator('a[href="/companies/12261967"]')).toHaveCount(0);
   const detail = await request.get("/api/v1/companies/12261967");
-  expect(detail.status()).toBe(200);
-  expect((await detail.json()).data.employeeCount).toBe(0);
-  await page.goto("/companies/12261967");
-  await expect(page.locator("h1")).toContainText("국보디자인");
+  expect(detail.status()).toBe(404);
+  expect((await request.get('/api/v1/companies/12261967/history')).status()).toBe(404);
+  expect((await page.goto("/companies/12261967"))?.status()).toBe(404);
 });
 
 test("adjacent record candidates link both ways without stitching histories", async ({ page, request }) => {

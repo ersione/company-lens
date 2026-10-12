@@ -31,6 +31,9 @@ test("latest search state handles omitted revisions, older imports, nulls and at
       client, undefined, { publishedAt: "2026-09-24" });
     assert.deepEqual(latest(), [{ name: "누락회사", month: "2026-07", employees: 10 },
       { name: "수정회사", month: "2026-08", employees: null }]);
+    const indexedCounts = () => client.sqlite.prepare(`SELECT employee_count AS employees
+      FROM company_latest INDEXED BY company_latest_employees_idx ORDER BY employee_count DESC`).all();
+    assert.deepEqual(indexedCounts(), [{ employees: 10 }, { employees: null }]);
     await importNpsCsv(write("older.csv", "202608", [["수정회사", "2222222222", "999"]]),
       client, undefined, { publishedAt: "2026-09-22" });
     assert.equal((latest()[1] as { employees: number | null }).employees, null);
@@ -45,8 +48,10 @@ test("latest search state handles omitted revisions, older imports, nulls and at
     assert.throws(() => rebuildCompanyLatest(client.sqlite), /test failure/);
     assert.deepEqual(latest(), before);
     client.sqlite.exec("DROP TRIGGER fail_latest;");
+    assert.deepEqual(indexedCounts(), [{ employees: 10 }, { employees: null }]);
     client.sqlite.exec("DELETE FROM companies WHERE name = '누락회사';");
     assert.equal(latest().length, 1);
+    assert.deepEqual(indexedCounts(), [{ employees: null }]);
   } finally {
     client.sqlite.close();
     fs.rmSync(directory, { recursive: true, force: true });

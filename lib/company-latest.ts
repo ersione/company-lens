@@ -7,6 +7,11 @@ export function hasCompanyLatest(sqlite: Database.Database) {
   return Boolean(sqlite.prepare("SELECT 1 FROM company_latest_state WHERE id = 1").get());
 }
 
+export function provisionCompanyEmployeeIndex(sqlite: Database.Database) {
+  sqlite.exec(`CREATE INDEX IF NOT EXISTS company_latest_employees_idx
+    ON company_latest(employee_count DESC, snapshot_month DESC, company_id);`);
+}
+
 function insertLatest(sqlite: Database.Database, candidates: string) {
   sqlite.exec(`INSERT INTO company_latest (company_id, snapshot_id, source_file_id, snapshot_month,
       employee_count, monthly_billed_amount, new_joiners, departures)
@@ -23,6 +28,7 @@ function insertLatest(sqlite: Database.Database, candidates: string) {
 export function rebuildCompanyLatest(sqlite: Database.Database, onProgress?: (rows: number) => void) {
   return sqlite.transaction(() => {
     sqlite.exec("DELETE FROM company_latest;");
+    provisionCompanyEmployeeIndex(sqlite);
     const next = sqlite.prepare(`SELECT MAX(id) AS last FROM (
       SELECT id FROM companies WHERE id > ? ORDER BY id LIMIT 100000
     )`);

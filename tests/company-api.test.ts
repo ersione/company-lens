@@ -74,18 +74,33 @@ test("API routes and OpenAPI contract agree on local fixture data", async (t) =>
       assert.equal(body.data.totalPages, 1);
       assert.equal(body.data.hasMore, false);
       assert.equal(body.data.companies[0].id, 1);
+      assert.equal(body.data.sort,"employees");
       assert.equal(body.meta.salaryBasis, "국민연금 기반 추정치");
       assert.equal((await check(search(request("/api/v1/companies?q=123-456")), "SearchResponse")).data.companies[0].id, 1);
       assert.deepEqual((await check(search(request("/api/v1/companies?q=없는사업장")), "SearchResponse")).data.companies, []);
     });
     await t.test("invalid searches and limits fail before querying", async () => {
-      for (const query of ["", "?q=", "?q=회사", "?q=abc%25", "?q=abc_", "?q=abc%00", "?q=---", "?q=1--", `?q=${"가".repeat(101)}`,
+      for (const query of ["", "?q=", "?q=가", "?q=abc%25", "?q=abc_", "?q=abc%00", "?q=---", "?q=1--", `?q=${"가".repeat(101)}`,
         "?q=테스트&limit=0", "?q=테스트&limit=21", "?q=테스트&limit=1.2", "?q=테스트&limit=01", "?q=테스트&limit=1e1",
         "?q=테스트&q=중복값", "?q=테스트&offset=1", "?q=테스트&page=0", "?q=테스트&page=1001",
         "?q=테스트&page=01", "?q=테스트&page=1&page=2", "?q=테스트&region=서울", "?q=테스트&sort=random",
         "?q=테스트&minEmployees=-1", "?q=테스트&minEmployees=10000001", "?q=테스트&minEmployees=1.5"]) {
         await check(search(request(`/api/v1/companies${query}`)), "Error", 400);
       }
+    });
+    await t.test("two-character names match inside legal names and numeric separators preserve results", async () => {
+      client.sqlite.exec("UPDATE companies SET name='주식회사티빙',normalized_name='주식회사티빙' WHERE id=3");
+      try {
+        assert.equal((await check(search(request("/api/v1/companies?q=티빙")), "SearchResponse")).data.totalCount, 0);
+        const body = (await check(search(request("/api/v1/companies?q=티빙&includeHistory=true")), "SearchResponse")).data;
+        assert.equal(body.totalCount, 1);
+        assert.equal(body.companies[0].id, 3);
+        assert.equal(body.companies[0].name, "주식회사티빙");
+        for (const query of ["12", "1-2", "1%20-%202"]) {
+          const data = (await check(search(request(`/api/v1/companies?q=${query}`)), "SearchResponse")).data;
+          assert.deepEqual(data.companies.map((company: { id: number }) => company.id), [1]);
+        }
+      } finally { client.sqlite.exec("UPDATE companies SET name='이전회사',normalized_name='이전회사' WHERE id=3"); }
     });
     await t.test("search pagination and filters extend the existing response contract", async () => {
       client.sqlite.exec("UPDATE companies SET address = '서울특별시 강남구' WHERE id = 1");

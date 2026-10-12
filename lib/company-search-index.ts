@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
+import { rebuildCompanyShortSearchIndex } from "./company-short-search";
 
-export function rebuildCompanySearchIndex(sqlite: Database.Database) {
+export function rebuildCompanySearchIndex(sqlite: Database.Database, progress?: (count: number) => void) {
   sqlite.transaction(() => {
     sqlite.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS company_search USING fts5(
@@ -27,6 +28,7 @@ export function rebuildCompanySearchIndex(sqlite: Database.Database) {
       INSERT INTO company_search(company_search) VALUES ('rebuild');
     `);
   }).immediate();
+  rebuildCompanyShortSearchIndex(sqlite, progress);
 }
 
 export function searchIndexMatch(query: string, registrationQuery: string) {

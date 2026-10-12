@@ -75,7 +75,7 @@ function summary(company: CompanySearchResult) {
 }
 
 export function searchApi(request: Request) {
-  const params = parameters(request, ["q", "limit", "region", "minEmployees", "sort", "page"]);
+  const params = parameters(request, ["q", "limit", "region", "minEmployees", "sort", "page", "includeHistory"]);
   const { query, error } = validateCompanySearch(params.get("q") ?? undefined);
   if (error) throw new ApiInputError(`q: ${error}`);
   const limit = positiveInteger(params.get("limit") ?? "5", "limit", 20);

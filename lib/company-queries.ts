@@ -4,9 +4,11 @@ import { maxSearchCandidates, SearchTooBroadError } from "@/lib/company-search-g
 import { migrate } from "@/db/migrate";
 import type { Distribution } from "@/db/schema";
 import { searchIndexMatch } from "@/lib/company-search-index";
+import { shortSearchMatch, hasShortSearchIndex } from "@/lib/company-short-search";
 import { estimatedMonthlySalarySql } from "@/lib/pension";
 import type { CompanyBenchmark } from "@/lib/company-benchmarks";
-import { regionPrefixes, type SearchOptions } from "@/lib/company-search-options";
+import { defaultSearchOptions, regionPrefixes, type SearchOptions } from "@/lib/company-search-options";
+import { companyRelevanceKey } from "@/lib/company-relevance";
 import { canonicalSnapshotSql, hasCompanyLatest } from "@/lib/company-latest";
 import { sizeBandSql, type SizeCohortComparison } from "@/lib/company-size-cohorts";
 
@@ -140,12 +142,14 @@ export function searchCompanies(query: string, limit = 20, options: Partial<Sear
 
 function queryCompanies(sqlite: ReturnType<typeof createDb>["sqlite"], query: string, limit: number,
   options: Partial<SearchOptions> & { offset?: number }, countResults = false) {
+    const sort = options.sort ?? defaultSearchOptions.sort;
     const normalizedQuery = `%${query.trim().toLocaleLowerCase("ko-KR")}%`;
     const registrationQuery = /^[\d\s-]+$/.test(query.trim()) ? query.replace(/\D/g, "") : "";
-    const { cutoff } = sqlite.prepare(`SELECT strftime('%Y-%m', COALESCE(
+    const { cutoff, latestMonth } = sqlite.prepare(`SELECT month AS latestMonth,
+      strftime('%Y-%m', month || '-01', '-12 months') AS cutoff FROM (SELECT COALESCE(
       (SELECT MAX(snapshot_month) FROM monthly_statistics),
-      (SELECT MAX(snapshot_month) FROM source_files)) || '-01', '-12 months') AS cutoff`)
-      .get() as { cutoff: string | null };
+      (SELECT MAX(snapshot_month) FROM source_files)) AS month)`)
+      .get() as { cutoff: string | null; latestMonth: string | null };
     // Suppress zero-subscriber daily-worker records, not companies with a similar ordinary name.
     const markedName = "REPLACE(REPLACE(c.name, '（', '('), '）', ')')";
     const dailyWorker = `(${markedName} LIKE '%(일용)%' OR ${markedName} LIKE '%(일용직)%'
@@ -156,9 +160,10 @@ function queryCompanies(sqlite: ReturnType<typeof createDb>["sqlite"], query: st
         SELECT 1 FROM company_snapshots s2
         WHERE s2.company_id = c.id AND s2.snapshot_month < s.snapshot_month AND ${canonicalSnapshot}
       ))`;
+    const joinType = !options.includeHistory && query.trim() ? "CROSS JOIN" : "LEFT JOIN";
     const latestJoin = hasCompanyLatest(sqlite)
-      ? "LEFT JOIN company_latest s ON s.company_id = c.id"
-      : `LEFT JOIN company_snapshots s ON s.id = (
+      ? `${joinType} company_latest s ON s.company_id = c.id`
+      : `${joinType} company_snapshots s ON s.id = (
           SELECT s2.id FROM company_snapshots s2
           WHERE s2.company_id = c.id AND ${canonicalSnapshot}
           ORDER BY s2.snapshot_month DESC, s2.id DESC LIMIT 1
@@ -212,41 +217,43 @@ function queryCompanies(sqlite: ReturnType<typeof createDb>["sqlite"], query: st
     const indexed = indexMatch !== undefined && sqlite.prepare(
       "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'company_search'"
     ).get();
-    const prefix = query.trim().toLocaleLowerCase("ko-KR");
-    const prefixEnd = `${prefix}\uffff`;
-    // Prefix matches always rank ahead of contains matches. If they fill the page,
-    // short searches can avoid a full scan without changing the top results.
-    const prefixOnly = !countResults && !indexed && !registrationQuery && !options.region && !options.minEmployees
-      && !options.offset && options.sort !== "employees" && !/[%_]/.test(prefix)
-      && sqlite.prepare(`SELECT c.id FROM companies c INDEXED BY companies_name_idx ${latestJoin}
-        WHERE c.normalized_name >= ? AND c.normalized_name < ? AND ${visible} LIMIT ?`)
-        .all(prefix, prefixEnd, cutoff, cutoff, limit).length === limit;
-    const matches = prefixOnly
-      ? `SELECT id FROM companies INDEXED BY companies_name_idx WHERE normalized_name >= ? AND normalized_name < ?`
-      : indexed
+    const prefix = companyRelevanceKey(query);
+    const shortMatch = shortSearchMatch(query, registrationQuery);
+    const shortIndexed = shortMatch !== undefined && hasShortSearchIndex(sqlite);
+    const rawMatches = indexed
       ? `SELECT rowid AS id FROM company_search WHERE company_search MATCH ?`
+      : shortIndexed
+      ? `SELECT f.rowid AS id FROM company_short_search f CROSS JOIN companies c ON c.id=f.rowid
+          WHERE company_short_search MATCH ? AND (c.normalized_name LIKE ? OR c.name LIKE ?
+            OR (? != '' AND c.registration_number LIKE ?))`
       : `SELECT id FROM companies INDEXED BY companies_search_covering_idx
           WHERE normalized_name LIKE ? OR name LIKE ?
              OR (? != '' AND registration_number LIKE ?)`;
-    const matchArguments = prefixOnly ? [prefix, prefixEnd] : indexed ? [indexMatch]
+    const matchArguments: (string | null | undefined)[] = indexed ? [indexMatch]
+      : shortIndexed ? [shortMatch, normalizedQuery, `%${query.trim()}%`, registrationQuery, `%${registrationQuery}%`]
       : [normalizedQuery, `%${query.trim()}%`, registrationQuery, `%${registrationQuery}%`];
     // Bound discovery before materialization, random latest-row lookups and sorting.
-    const { count } = sqlite.prepare(`SELECT COUNT(*) AS count FROM (${matches} LIMIT ?)`)
+    const { count } = sqlite.prepare(`SELECT COUNT(*) AS count FROM (${rawMatches} LIMIT ?)`)
       .get(...matchArguments, maxSearchCandidates + 1) as { count: number };
     if (count > maxSearchCandidates) throw new SearchTooBroadError();
     const prefixes = regionPrefixes(options.region ?? "");
     const regionClause = prefixes.length ? `AND (${prefixes.map(() => "c.address LIKE ?").join(" OR ")})` : "";
-    const order = options.sort === "employees" ? "s.employee_count DESC, s.snapshot_month DESC, c.name ASC, c.id ASC"
-      : `CASE WHEN c.normalized_name = ? THEN 0 WHEN c.normalized_name LIKE ? THEN 1 ELSE 2 END,
-          LENGTH(c.name) ASC, s.employee_count DESC, s.snapshot_month DESC, c.name ASC, c.id ASC`;
+    if (sort === "relevance") sqlite.function("company_relevance_key", { deterministic: true },
+      (name) => companyRelevanceKey(typeof name === "string" ? name : ""));
+    const relevanceKey = "company_relevance_key(c.name)";
+    const order = sort === "employees" ? "s.employee_count DESC, s.snapshot_month DESC, c.name ASC, c.id ASC"
+      : `CASE WHEN ${relevanceKey} = ? THEN 0 WHEN ${relevanceKey} LIKE ? THEN 1 ELSE 2 END,
+          LENGTH(${relevanceKey}) ASC, s.employee_count DESC, s.snapshot_month DESC, c.name ASC, c.id ASC`;
 
-    const filtered = `FROM matches matched JOIN companies c ON c.id = matched.id
+    // Candidate-first joins avoid a subscriber-index skip-scan across the entire latest month.
+    const filtered = `FROM matches matched CROSS JOIN companies c ON c.id = matched.id
       ${latestJoin}
-      WHERE ${visible} AND (? IS NULL OR s.employee_count >= ?) ${regionClause}`;
-    const filterArguments = [...matchArguments, cutoff, cutoff, options.minEmployees ?? null,
+      WHERE ${options.includeHistory ? "" : "s.snapshot_month = ? AND "}${visible}
+      AND (? IS NULL OR s.employee_count >= ?) ${regionClause}`;
+    const filterArguments = [...matchArguments, ...(options.includeHistory ? [] : [latestMonth]), cutoff, cutoff, options.minEmployees ?? null,
       options.minEmployees ?? null, ...prefixes.map((value) => `${value}%`)];
     const totalCount = countResults
-      ? (sqlite.prepare(`WITH matches AS MATERIALIZED (${matches}) SELECT COUNT(*) AS count ${filtered}`)
+      ? (sqlite.prepare(`WITH matches AS MATERIALIZED (${rawMatches}) SELECT COUNT(*) AS count ${filtered}`)
           .get(...filterArguments) as { count: number }).count
       : null;
     if (totalCount === 0 || (totalCount !== null && (options.offset ?? 0) >= totalCount)) {
@@ -256,7 +263,7 @@ function queryCompanies(sqlite: ReturnType<typeof createDb>["sqlite"], query: st
     const results = sqlite
       .prepare(
         `
-        WITH matches AS MATERIALIZED (${matches})
+        WITH matches AS MATERIALIZED (${rawMatches})
         SELECT
           c.id,
           c.name,
@@ -273,7 +280,7 @@ function queryCompanies(sqlite: ReturnType<typeof createDb>["sqlite"], query: st
       `
       )
       .all(...filterArguments,
-        ...(options.sort === "employees" ? [] : [prefix, `${prefix}%`]), limit, options.offset ?? 0) as CompanySearchResult[];
+        ...(sort === "employees" ? [] : [prefix, `${prefix}%`]), limit, options.offset ?? 0) as CompanySearchResult[];
     return { results, totalCount: totalCount ?? results.length };
 }
 

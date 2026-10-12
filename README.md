@@ -6,8 +6,12 @@ Search Korean workplaces using National Pension Service public data: subscriber 
 estimated salaries, employment history, industry/size benchmarks and up to three-workplace
 comparisons. Includes browser-local recent visits and a protected usage dashboard.
 
+Search requires at least two characters and defaults to the latest loaded month, ordered
+by subscriber count. Historical workplaces are opt-in; missing latest data does not imply closure.
+
 Salaries are **National Pension-based estimates**, not actual payroll. Subscriber counts
 do not establish legal company size; similar names do not establish company identity.
+Explicit daily-worker workplaces (e.g. `/일용/`, `(일용)`, `건설일용관리`) are excluded during import.
 
 **Stack:** Next.js, TypeScript, Tailwind CSS, SQLite/Drizzle, Chart.js. Requires Node.js 22+ and npm.
 
@@ -65,6 +69,9 @@ that bypass the backend are excluded. Recent visits stay in the browser.
 | Sync/resume; retain only the verified newest raw file | `npm run sync:nps-history -- --prune` |
 | Repair statistics / benchmarks | `npm run stats:rebuild` / `npm run benchmarks:rebuild` |
 | Rebuild search after DB replacement/direct SQL edits | `npm run search:rebuild` then `npm run search:refresh-latest` |
+| Add subscriber-count index to an existing DB | `npm run search:index-employees` (no history rebuild) |
+| Add two-character index to an existing database | `npm run search:rebuild-short` |
+| Remove existing daily-worker workplaces/history | `npm run data:prune-daily`; add `-- --apply` to create a verified candidate for manual activation |
 | Private metrics report | `npm run metrics:report -- 30` |
 | Register monthly collection on macOS | `npm run sync:start-job` |
 | Register production web service on macOS after building | `npm run web:start-job` |
@@ -86,6 +93,6 @@ Run `npm test`, `npm run typecheck` and an isolated `npm run build`. Browser che
 a running server, matching fixture data and Chromium: `npx playwright install chromium`,
 then `npm run test:browser` (`PLAYWRIGHT_BASE_URL` overrides the target).
 
-[API contract](docs/api.md) · [Metrics/auth details](docs/usage-metrics.md) · [Implementation notes](docs/implementation-status.md) · [Changelog](CHANGELOG.md)
+[API contract](docs/api.md) · [Metrics/auth details](docs/usage-metrics.md) · [Changelog](CHANGELOG.md)
 
 Code: [MIT](LICENSE). Public data has separate [source usage conditions](https://www.data.go.kr/data/15083277/fileData.do); raw data is not distributed here.

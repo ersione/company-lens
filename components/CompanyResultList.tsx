@@ -3,7 +3,7 @@ import type { CompanySearchResult } from "@/lib/company-queries";
 import { formatCurrency, formatIndustry, formatNumber, formatSnapshotMonth } from "@/lib/format";
 import { ArrowUpRight, Building2, MapPin, SearchX } from "lucide-react";
 
-export function CompanyResultList({ results }: { results: CompanySearchResult[] }) {
+export function CompanyResultList({ results, latestMonth }: { results: CompanySearchResult[]; latestMonth?: string }) {
   if (results.length === 0) {
     return (
       <div className="empty-state">
@@ -22,6 +22,9 @@ export function CompanyResultList({ results }: { results: CompanySearchResult[] 
             <strong><Building2 size={18} aria-hidden="true" />{company.name}</strong>
             <span>{formatIndustry(company.industry)}</span>
             <small><MapPin size={13} aria-hidden="true" />{company.address ?? "주소 정보 없음"}</small>
+            {latestMonth && company.snapshotMonth !== latestMonth && <span className="historical-workplace">
+              최신 자료에 없음 · 마지막 관측 {formatSnapshotMonth(company.snapshotMonth)}
+            </span>}
           </div>
           <div className="result-metrics">
             <Metric label="기준월" value={formatSnapshotMonth(company.snapshotMonth)} />

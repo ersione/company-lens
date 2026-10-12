@@ -15,7 +15,9 @@ test("metrics use KST, normalize company terms, redact contact/number searches a
   assert.equal(metricDay(now), "2026-10-12");
   assert.equal(metricDay(Date.parse("2026-10-11T14:59:59Z")), "2026-10-11");
   assert.equal(metricSearchTerm("  SAMSUNG   전자 "), "samsung 전자");
-  for (const query of ["123-45-67890", "01012345678", "abc@example.com", "https://abc.com", "회사 010-1234-5678", "ab", "abc%", "abc\u0000"]) assert.equal(metricSearchTerm(query), null);
+  assert.equal(metricSearchTerm(" 티빙 "), "티빙");
+  assert.equal(metricSearchTerm("ab"), "ab");
+  for (const query of ["12", "1-2", "123-45-67890", "01012345678", "abc@example.com", "https://abc.com", "회사 010-1234-5678", "a", "abc%", "abc\u0000"]) assert.equal(metricSearchTerm(query), null);
   assert.deepEqual([null, -1, 0, 1, 9, 10, 49, 50, 299, 300, 999, 1000].map(metricSize),
     ["unknown", "unknown", "0", "1-9", "1-9", "10-49", "10-49", "50-299", "50-299", "300-999", "300-999", "1000+"]);
   const skippedHeaders: Record<string, string>[] = [{ "next-router-prefetch": "1" }, { purpose: "prefetch" }, { "sec-purpose": "prefetch;prerender" }, { "user-agent": "Slackbot" }];

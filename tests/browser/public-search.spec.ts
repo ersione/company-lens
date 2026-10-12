@@ -1,13 +1,38 @@
 import { expect, test } from "@playwright/test";
 
-test("broad daily-worker searches fail safely without blocking status or subsequent searches", async ({ page, request }) => {
-  const response = await request.get(`/api/v1/companies?q=${encodeURIComponent("(일용")}`, { timeout: 10000 });
+test("two-character workplace search works in web, API and comparison", async ({ page, request }) => {
+  test.setTimeout(180000);
+  const response = await request.get(`/api/v1/companies?q=${encodeURIComponent("티빙")}`, { timeout: 60000 });
+  expect(response.status()).toBe(200);
+  const data = (await response.json()).data;
+  expect(data.query).toBe("티빙");
+  expect(data.companies.some((row: { name: string }) => row.name === "주식회사티빙")).toBe(true);
+  expect(data.totalCount).toBeGreaterThan(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByRole("textbox", { name: "회사 검색" }).fill("티빙");
+  await page.getByRole("button", { name: "검색", exact: true }).click();
+  await expect(page.locator("a.result-row").first()).toContainText("티빙", { timeout: 60000 });
+  await expect(page.locator("#search-error")).toHaveCount(0);
+  await expect(page.locator("#search-results-title .result-query")).toHaveText("티빙");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/two-character-search-390.png", fullPage: true });
+  await page.goto(`/?q=${encodeURIComponent("티빙")}&region=${encodeURIComponent("서울특별시")}&sort=employees`);
+  await expect(page.locator("#search-error")).toHaveCount(0);
+  await expect(page.locator("a.result-row").first()).toContainText("티빙");
+  await page.goto(`/compare?q=${encodeURIComponent("티빙")}`);
+  await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
+  await expect(page.locator(".comparison-search-results")).toContainText("티빙");
+});
+
+test("broad workplace searches fail safely without blocking status or subsequent searches", async ({ page, request }) => {
+  const response = await request.get(`/api/v1/companies?q=${encodeURIComponent("회사")}`, { timeout: 10000 });
   expect(response.status()).toBe(400);
   expect((await response.json()).error.message).toContain("검색 범위가 너무 넓습니다");
   expect(response.headers()["cache-control"]).toBe("no-store");
-  await page.goto(`/?q=${encodeURIComponent("(일용")}`);
+  await page.goto(`/?q=${encodeURIComponent("회사")}`);
   await expect(page.locator("main").getByRole("alert")).toContainText("더 구체적으로");
-  await page.goto(`/compare?q=${encodeURIComponent("(일용")}`);
+  await page.goto(`/compare?q=${encodeURIComponent("회사")}`);
   await expect(page.locator("main").getByRole("alert")).toContainText("더 구체적으로");
   expect((await request.get("/api/v1/status", { timeout: 5000 })).status()).toBe(200);
   expect((await request.get(`/api/v1/companies?q=${encodeURIComponent("삼성전자")}`, { timeout: 10000 })).status()).toBe(200);
@@ -21,7 +46,7 @@ test("web search rejects invalid and repeated q without results or rendering err
     const headers = response.headers();
     if (headers["content-type"]?.includes("text/x-component")) rscCacheHeaders.push(headers["cache-control"] ?? "");
   });
-  for (const query of ["q=회사", "q=1--", "q=abc%25", "q=abc_", "q=%0A삼성전자", `q=${"가".repeat(101)}`, "q=삼성전자&q=네이버", "q=&q="]) {
+  for (const query of ["q=가", "q=1--", "q=abc%25", "q=abc_", "q=%0A삼성전자", `q=${"가".repeat(101)}`, "q=삼성전자&q=네이버", "q=&q="]) {
     const response = await page.goto(`/?${query}`);
     expect(response?.status()).toBe(200);
     await expect(page.locator("#search-error")).toBeVisible();
@@ -33,7 +58,7 @@ test("web search rejects invalid and repeated q without results or rendering err
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/public-search-error-320.png", fullPage: true });
   await page.goto("/");
-  await page.getByRole("textbox", { name: "회사 검색" }).fill("회사");
+  await page.getByRole("textbox", { name: "회사 검색" }).fill("가");
   await page.getByRole("button", { name: "검색", exact: true }).click();
   await expect(page.locator("#search-error")).toBeVisible();
   await page.getByRole("textbox", { name: "회사 검색" }).fill("네이버");

@@ -21,7 +21,7 @@ try {
   const result = await importNpsCsv(filePath, client, (rows) => console.log(`Processed ${rows.toLocaleString()} rows`), { publishedAt });
   console.log(`Imported ${result.snapshotCount} snapshots from ${result.sourceFile.fileName}`);
   console.log(`Snapshot month: ${result.sourceFile.snapshotMonth}`);
-  console.log(`Raw rows: ${result.rowCount}; aggregated rows: ${result.aggregatedRowCount}`);
+  console.log(`Raw rows: ${result.rowCount}; excluded daily-worker rows: ${result.excludedRowCount}; aggregated rows: ${result.aggregatedRowCount}`);
   console.log(`Source checksum: ${result.sourceFile.checksum}`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);

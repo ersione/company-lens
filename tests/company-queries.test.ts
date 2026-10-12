@@ -121,9 +121,11 @@ test("broad searches stop before snapshot joins and return actionable web/API er
       VALUES (?,'(일용) 테스트회사','(일용) 테스트회사','now','now')`);
     sqlite.transaction(() => { for (let i = 0; i < maxSearchCandidates; i++) insert.run(String(i)); })();
     rebuildCompanySearchIndex(sqlite);
-    assert.equal(searchCompanies("(일용", 1).length, 1, "exact cap remains searchable");
+    assert.equal(searchCompanies("(일용", 1, { includeHistory: true }).length, 1, "exact cap remains searchable");
+    assert.equal(searchCompanies("회사", 1, { includeHistory: true }).length, 1, "short index accepts the exact candidate cap");
     insert.run(String(maxSearchCandidates));
     assert.throws(() => searchCompanies("(일용", 1), SearchTooBroadError);
+    assert.throws(() => searchCompanyPage("회사", defaultSearchOptions), SearchTooBroadError);
     assert.throws(() => searchCompanyPage("(일용", { ...defaultSearchOptions, region: "서울특별시", page: 2 }), SearchTooBroadError);
     assert.deepEqual(searchCompanySuggestions("(일용"), [], "optional suggestions cannot break details");
     const response = apiResponse(() => searchApi(new Request("http://localhost/api/v1/companies?q=%28%EC%9D%BC%EC%9A%A9")));
@@ -162,19 +164,20 @@ test("search hides stale zero-subscriber records before pagination without delet
     });
     insertSnapshot.run(3, '2025-08', 3);
     const check = () => {
-      assert.deepEqual(searchCompanies("Alpha", 20).map((row) => row.id), [7,4,3,5,6]);
+      assert.deepEqual(searchCompanies("Alpha", 20).map((row) => row.id), [7]);
+      assert.deepEqual(searchCompanies("Alpha", 20, { includeHistory: true }).map((row) => row.id), [7,4,3,5,6]);
       assert.deepEqual(searchCompanies("Alpha 1"), []);
       assert.equal(getCompanyDetail(1)?.employeeCount, 0);
       assert.equal(getCompanyDetail(1)?.snapshotMonth, "2018-01");
       assert.equal(searchCompanies("", 20).length, 5);
-      const first = searchCompanyPage("Alpha", defaultSearchOptions, 3);
+      const first = searchCompanyPage("Alpha", { ...defaultSearchOptions, includeHistory: true }, 3);
       assert.deepEqual(first.results.map((row) => row.id), [7,4,3]);
       assert.equal(first.hasMore, true);
-      const second = searchCompanyPage("Alpha", { ...defaultSearchOptions, page: 2 }, 3);
+      const second = searchCompanyPage("Alpha", { ...defaultSearchOptions, includeHistory: true, page: 2 }, 3);
       assert.deepEqual(second.results.map((row) => row.id), [5,6]);
       assert.equal(second.hasMore, false);
       assert.deepEqual(searchCompanies("Al", 1).map((row) => row.id), [7], "short-prefix shortcut also filters before limiting");
-      assert.deepEqual(searchCompanies("Alpha", 20, { sort: "employees", minEmployees: 1, region: "서울특별시" }).map((row) => row.id), [7,4]);
+      assert.deepEqual(searchCompanies("Alpha", 20, { includeHistory: true, sort: "employees", minEmployees: 1, region: "서울특별시" }).map((row) => row.id), [7,4]);
     };
     check();
     rebuildCompanySearchIndex(sqlite);
@@ -185,7 +188,8 @@ test("search hides stale zero-subscriber records before pagination without delet
     assert.equal(searchCompanies("Alpha 3").length, 0, "cutoff advances with dataset month, not wall clock");
     assert.equal(getCompanyDetail(3)?.employeeCount, 0);
     sqlite.exec("DELETE FROM company_latest_state; DELETE FROM company_latest; DELETE FROM monthly_statistics; DELETE FROM company_snapshots; DELETE FROM source_files;");
-    assert.equal(searchCompanies("Alpha", 20).length, 7, "unknown dataset month does not suppress records");
+    assert.equal(searchCompanies("Alpha", 20).length, 0, "current-only search requires a dataset month");
+    assert.equal(searchCompanies("Alpha", 20, { includeHistory: true }).length, 7, "historical search preserves unknown records");
   } finally {
     sqlite.close();
     if (previousUrl === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = previousUrl;
@@ -213,7 +217,7 @@ test("name search excludes unrelated registered companies and returns latest sna
     assert.deepEqual(searchCompanies("Alpha").map((company) => company.name), ["Alpha"]);
     assert.equal(searchCompanies("Alpha")[0].employeeCount, 20);
     assert.equal(searchCompanies("missing").length, 0);
-    assert.equal(searchCompanies("987-65")[0].name, "Beta");
+    assert.equal(searchCompanies("987-65", 20, { includeHistory: true })[0].name, "Beta");
     assert.equal(getCompanyDetail(1)?.address, null);
     assert.equal(getCompanyDetail(1)?.industry, null);
     assert.equal(getCompanyDetail(999), undefined);
@@ -222,7 +226,7 @@ test("name search excludes unrelated registered companies and returns latest sna
       VALUES ('c', '555555', '(Contractor) Alpha construction', '(contractor) alpha construction', 'now', 'now'),
              ('d', '123456', 'Alpha Ltd', 'alpha ltd', 'now', 'now');
     `);
-    assert.deepEqual(searchCompanies("Alpha", 2).map((company) => company.name), ["Alpha", "Alpha Ltd"]);
+    assert.deepEqual(searchCompanies("Alpha", 2, { sort: "relevance", includeHistory: true }).map((company) => company.name), ["Alpha", "Alpha Ltd"]);
     assert.equal(searchCompanies("Missing123").length, 0);
     assert.deepEqual(searchCompanies("", 3).map((company) => company.name), ["Alpha", "(Contractor) Alpha construction", "Alpha Ltd"]);
     client.sqlite.exec(`
@@ -240,19 +244,19 @@ test("name search excludes unrelated registered companies and returns latest sna
     const expected = searchCompanies("Alpha");
     rebuildCompanySearchIndex(client.sqlite);
     assert.deepEqual(searchCompanies("Alpha"), expected);
-    assert.equal(searchCompanies("pha").length, 3);
-    assert.equal(searchCompanies("987-65")[0].name, "Beta");
-    assert.equal(searchCompanies("Al").length, 3);
+    assert.equal(searchCompanies("pha", 20, { includeHistory: true }).length, 3);
+    assert.equal(searchCompanies("987-65", 20, { includeHistory: true })[0].name, "Beta");
+    assert.equal(searchCompanies("Al", 20, { includeHistory: true }).length, 3);
     assert.equal(searchCompanies("Al", 1)[0].name, "Alpha");
     assert.equal(searchCompanies('" OR *').length, 0);
     client.sqlite.exec(`UPDATE companies SET name = 'Gamma', normalized_name = 'gamma' WHERE id = 2`);
     assert.equal(searchCompanies("Beta").length, 0);
-    assert.equal(searchCompanies("Gamma")[0].id, 2);
+    assert.equal(searchCompanies("Gamma", 20, { includeHistory: true })[0].id, 2);
     client.sqlite.exec(`DELETE FROM companies WHERE id = 3`);
     assert.equal(searchCompanies("construction").length, 0);
     client.sqlite.exec(`INSERT INTO companies (identity_key, name, normalized_name, created_at, updated_at)
       VALUES ('new', '새로운테스트회사', '새로운테스트회사', 'now', 'now')`);
-    assert.equal(searchCompanies("테스트")[0].name, "새로운테스트회사");
+    assert.equal(searchCompanies("테스트", 20, { includeHistory: true })[0].name, "새로운테스트회사");
     assert.equal(searchIndexMatch("회사", ""), undefined);
     const searchPlan = client.sqlite.prepare(`EXPLAIN QUERY PLAN SELECT rowid FROM company_search WHERE company_search MATCH ?`)
       .all(searchIndexMatch("Alpha", "")) as { detail: string }[];

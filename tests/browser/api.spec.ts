@@ -32,6 +32,7 @@ test("public API serves real indexed data, documented errors, and OpenAPI", asyn
   expect(document.paths["/api/v1/companies/{id}/history"].get.operationId).toBe("getCompanyHistory");
   await page.goto("/api-docs");
   await expect(page.getByRole("heading", { name: "Company Lens API", exact: true })).toBeVisible();
+  await expect(page.locator("main")).toContainText("includeHistory=true");
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

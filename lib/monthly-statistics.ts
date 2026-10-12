@@ -3,14 +3,14 @@ import type { Distribution } from "@/db/schema";
 import { refreshCompanyBenchmarks } from "@/lib/company-benchmarks";
 import { refreshCompanyLatest } from "@/lib/company-latest";
 
-export function refreshMonthlyStatistics(sqlite: Database.Database, month: string) {
+export function refreshMonthlyStatistics(sqlite: Database.Database, month: string, options: { refreshDerived?: boolean } = {}) {
   const source = sqlite.prepare(`SELECT id FROM source_files WHERE snapshot_month = ?
     ORDER BY COALESCE(published_at, '') DESC, id DESC LIMIT 1`).get(month) as { id: number } | undefined;
   if (!source) return;
   const totals = sqlite.prepare(`SELECT COUNT(*) AS workplaceCount,
-    SUM(CASE WHEN subscription_status_code = '1' THEN 1 ELSE 0 END) AS activeWorkplaceCount,
+    COALESCE(SUM(CASE WHEN subscription_status_code = '1' THEN 1 ELSE 0 END), 0) AS activeWorkplaceCount,
     COALESCE(SUM(CASE WHEN subscription_status_code = '1' THEN employee_count END), 0) AS subscriberCount,
-    SUM(CASE WHEN subscription_status_code = '1' AND employee_count IS NULL THEN 1 ELSE 0 END) AS unknownEmployeeCount,
+    COALESCE(SUM(CASE WHEN subscription_status_code = '1' AND employee_count IS NULL THEN 1 ELSE 0 END), 0) AS unknownEmployeeCount,
     COALESCE(SUM(CASE WHEN subscription_status_code = '1' THEN new_joiners END), 0) AS newJoiners,
     COALESCE(SUM(CASE WHEN subscription_status_code = '1' THEN departures END), 0) AS departures
     FROM company_snapshots WHERE source_file_id = ?`).get(source.id) as Record<string, number>;
@@ -34,8 +34,10 @@ export function refreshMonthlyStatistics(sqlite: Database.Database, month: strin
       industry_distribution = excluded.industry_distribution, size_distribution = excluded.size_distribution,
       generated_at = excluded.generated_at`).run({ ...totals, month, sourceId: source.id,
         industries: JSON.stringify(industries), sizes: JSON.stringify(sizes), now: new Date().toISOString() });
-  refreshCompanyBenchmarks(sqlite, month);
-  refreshCompanyLatest(sqlite, month);
+  if (options.refreshDerived !== false) {
+    refreshCompanyBenchmarks(sqlite, month);
+    refreshCompanyLatest(sqlite, month);
+  }
 }
 
 export function rebuildMonthlyStatistics(sqlite: Database.Database) {

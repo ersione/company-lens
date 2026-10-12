@@ -5,6 +5,11 @@
 
 ## Unreleased
 
+- Default search to workplaces in the latest loaded month, with an explicit historical-workplace checkbox/API option and last-observed labels. Preserve historical detail/history and existing visibility/safety guards (OpenAPI 1.7.0). One-character searches remain unsupported.
+- Default web/API search ordering to latest subscriber count; retain optional relevance ordering with legal-form/whitespace-aware name ranking. Add an explicitly provisioned subscriber-count index to latest-company metrics (OpenAPI 1.6.0). One-character searches remain unsupported.
+- Exclude explicitly marked daily-worker workplaces on import; add isolated, verified removal of existing workplaces and their complete histories, refreshed statistics/benchmarks and compacted storage. Preserve ordinary names containing 일용 and original source provenance (OpenAPI 1.5.2).
+- Allow two-character company/number searches across web, comparison and API validation (OpenAPI 1.5.1); add a dedicated bigram FTS auxiliary index with import-maintained triggers, exact substring verification and the existing broad-candidate guard.
+
 - Replace fixed example companies with private browser-local recent workplace visits, limited to five / 30 days, with individual/all deletion and safe storage failure handling; the local history is not transmitted.
 - Add backend-only daily web/API usage, search trends/outcomes, workplace popularity and subscriber-size trends, latency buckets and HTTP error metrics in a separate 90-day SQLite store, with bounded cardinality, deferred fail-open recording and a private `metrics:report` command.
 - Add `/admin` charts and channel/period filters, protected by matching the configured ID and password with stateless eight-hour signed cookies, same-origin POST checks and process-local attempt limiting. No account/auth database; credentials remain server-local.

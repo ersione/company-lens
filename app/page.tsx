@@ -76,7 +76,7 @@ async function Home({ searchParams }: PageProps, usage: UsageEvent) {
             </div>
           </div>
           <p className="caveat result-source-note"><ShieldCheck size={15} aria-hidden="true" />국민연금 기반 추정치{dataset && ` · ${formatSnapshotMonth(dataset.snapshotMonth)} 기준`}</p>
-          <CompanyResultList results={results} />
+          <CompanyResultList results={results} latestMonth={dataset?.snapshotMonth} />
           {options.page > Math.max(1, totalPages) && <p className="caveat">요청한 페이지에 결과가 없습니다. <Link href={searchHref(query, { ...options, page: 1 })} prefetch={false}>첫 페이지로 돌아가기</Link></p>}
           <SearchPagination query={query} options={options} totalPages={totalPages} />
           {totalPages > maxSearchPage && <p className="caveat">최대 {formatNumber(maxSearchPage)}페이지까지 조회할 수 있습니다. 지역·가입자 규모 또는 회사명으로 검색을 좁혀 주세요.</p>}

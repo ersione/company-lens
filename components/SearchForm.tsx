@@ -9,7 +9,7 @@ import { regions, regionLabels, defaultSearchOptions, type SearchOptions } from 
 export function SearchForm({ query, error, options = defaultSearchOptions }: { query: string; error?: string | null; options?: SearchOptions }) {
   const sizes = [10, 50, 100, 300, 500, 1000];
   if (options.minEmployees !== null && !sizes.includes(options.minEmployees)) sizes.push(options.minEmployees);
-  const filtered = options.region || options.minEmployees !== null || options.sort !== "relevance";
+  const filtered = options.region || options.minEmployees !== null || options.sort !== defaultSearchOptions.sort || options.includeHistory;
   return (
     <Form action="/" className="company-search-form" role="search">
       <div className="search-form">
@@ -39,8 +39,13 @@ export function SearchForm({ query, error, options = defaultSearchOptions }: { q
         </label>
         <label><span><ArrowDownWideNarrow size={15} aria-hidden="true" />정렬</span>
           <select name="sort" aria-label="정렬" defaultValue={options.sort} onChange={(event) => event.currentTarget.form?.requestSubmit()}>
-            <option value="relevance">관련도순</option><option value="employees">가입자 수순</option>
+            <option value="employees">가입자 수순</option><option value="relevance">관련도순</option>
           </select>
+        </label>
+        <label className="history-filter">
+          <input type="checkbox" name="includeHistory" value="true" defaultChecked={options.includeHistory}
+            onChange={(event) => event.currentTarget.form?.requestSubmit()} />
+          <span>과거 사업장 포함</span>
         </label>
         {filtered && <Link className="filter-reset" href={`/?q=${encodeURIComponent(query)}`} prefetch={false}><RotateCcw size={15} aria-hidden="true" />초기화</Link>}
       </div>

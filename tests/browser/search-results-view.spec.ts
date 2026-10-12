@@ -35,7 +35,7 @@ test('empty, invalid and long searches keep a compact accessible layout', async 
   await expect(page.getByText('검색 결과가 없습니다.', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/search-long-query-320.png' });
-  await page.goto('/?q=ab');
+  await page.goto('/?q=a');
   await expect(page.locator('#search-error')).toBeVisible();
   await expect(page.locator('.search-error-heading')).toBeVisible();
   await expect(page.locator('.search-heading')).toHaveCount(0);

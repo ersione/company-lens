@@ -834,6 +834,9 @@ th {
 .search-filters select { width: 100%; height: 44px; padding: 0 32px 0 12px; border: 1px solid #cbd8df; border-radius: 6px; background: #fff; color: #17343e; font: inherit; font-size: 15px; }
 .search-filters select:focus-visible { outline: 2px solid #087f83; outline-offset: 2px; }
 .filter-reset { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; color: #087f83; }
+.search-filters .history-filter { flex: 0 1 auto; min-width: 0; max-width: none; flex-direction: row; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
+.history-filter input { width: 18px; height: 18px; margin: 0; accent-color: #087f83; flex-shrink: 0; }
+.result-main .historical-workplace { color: #98651d; font-size: 13px; font-weight: 600; }
 .search-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 28px 0 12px; }
 .search-pagination a, .search-pagination > span, .page-numbers strong { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 1px solid #cedce2; border-radius: 6px; font-weight: 600; }
 .search-pagination > a, .search-pagination > span { min-width: 76px; }

@@ -90,6 +90,26 @@ test("blocks duplicate imports by checksum", async () => {
   }
 });
 
+test("imports skip daily-worker rows even when all rows are excluded, preserving raw provenance", async () => {
+  const filePath = tempFile(`${header}\n202601,회사/일용/현장,123456,1,,,,10,950000,2,1\n`);
+  const client = createDb(path.join(path.dirname(filePath), "test.sqlite"));
+  try {
+    migrate(client.sqlite);
+    const excluded = await importNpsCsv(filePath, client);
+    assert.equal(excluded.rowCount,1);
+    assert.equal(excluded.excludedRowCount,1);
+    assert.equal(excluded.snapshotCount,0);
+    assert.equal(excluded.aggregatedRowCount,0);
+    assert.deepEqual(client.sqlite.prepare("SELECT workplace_count AS n,active_workplace_count AS active FROM monthly_statistics").get(),{n:0,active:0});
+    fs.writeFileSync(filePath,`${header}\n202602,일용상사,123456,1,,,,10,950000,2,1\n202602,회사 건설일용관리,999999,1,,,,5,475000,1,0\n202602,회사-일용)현장,888888,1,,,,3,285000,1,0\n`);
+    const mixed = await importNpsCsv(filePath,client);
+    assert.equal(mixed.rowCount,3);
+    assert.equal(mixed.excludedRowCount,2);
+    assert.equal(mixed.snapshotCount,1);
+    assert.deepEqual(client.sqlite.prepare("SELECT name FROM companies").all(),[{name:"일용상사"}]);
+  } finally { client.sqlite.close(); fs.rmSync(path.dirname(filePath),{recursive:true,force:true}); }
+});
+
 test("applies contribution rates by snapshot year and handles zero billed amount", () => {
   assert.equal(pensionRateForMonth("2025-12"), 0.09);
   assert.equal(pensionRateForMonth("2026-01"), 0.095);

@@ -1,9 +1,26 @@
 import { expect, test } from "@playwright/test";
 
+test("explicit relevance ordering survives pagination and reload", async ({ page, request }) => {
+  await page.goto("/?q=삼성전자&sort=relevance");
+  await expect(page.getByRole("combobox", { name: "정렬", exact: true })).toHaveValue("relevance");
+  await page.getByRole("navigation", { name: "검색 결과 페이지" }).getByRole("link", { name: "다음", exact: true }).click();
+  await expect(page).toHaveURL(/sort=relevance/);
+  await expect(page).toHaveURL(/page=2/);
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "정렬", exact: true })).toHaveValue("relevance");
+  const response = await request.get("/api/v1/companies?q=삼성전자&sort=relevance&page=2&limit=20");
+  expect(response.status()).toBe(200);
+  const data = (await response.json()).data;
+  expect(data.sort).toBe("relevance");
+  expect(await page.locator("a.result-row").evaluateAll((rows) => rows.map((row) => row.getAttribute("href"))))
+    .toEqual(data.companies.map((company: { id: number }) => `/companies/${company.id}`));
+});
+
 test("filters submit, reset the page, survive reload/back and stay within mobile bounds", async ({ page, request }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/?q=삼성전자&page=2");
+  await expect(page.getByRole("combobox", { name: "정렬", exact: true })).toHaveValue("employees");
   await page.getByRole("combobox", { name: "지역", exact: true }).selectOption("경기도");
   await expect(page).toHaveURL(/region=/);
   expect(new URL(page.url()).searchParams.has("page")).toBe(false);
@@ -49,7 +66,7 @@ test("pagination keeps filters, avoids duplicate rows, and invalid filters show 
   await page.goto(`/?${condition}`);
   await page.getByRole("navigation", { name: "검색 결과 페이지" }).getByRole("link", { name: "다음", exact: true }).click();
   await expect(page).toHaveURL(/page=2/);
-  expect(new URL(page.url()).searchParams.get("sort")).toBe("employees");
+  expect(new URL(page.url()).searchParams.get("sort")).toBeNull();
   const second = (await (await request.get(`/api/v1/companies?${condition}&limit=20&page=2`)).json()).data;
   expect(second.totalCount).toBe(first.totalCount);
   expect(second.totalPages).toBe(first.totalPages);
@@ -71,9 +88,11 @@ test("pagination keeps filters, avoids duplicate rows, and invalid filters show 
 test("numbered pages show exact totals, jump to last and recover from out-of-range URLs without mobile overflow", async ({ page, request }) => {
   const condition = "q=삼성전자&sort=employees";
   const data = (await (await request.get(`/api/v1/companies?${condition}&limit=20`)).json()).data;
-  await page.goto(`/?${condition}&page=10`);
+  expect(data.totalPages).toBeGreaterThan(1);
+  const initialPage = Math.min(10, data.totalPages - 1);
+  await page.goto(`/?${condition}&page=${initialPage}`);
   const navigation = page.getByRole("navigation", { name: "검색 결과 페이지" });
-  await expect(navigation.locator('[aria-current="page"]')).toHaveText("10");
+  await expect(navigation.locator('[aria-current="page"]')).toHaveText(String(initialPage));
   await expect(page.locator(".section-heading")).toContainText(`총 ${data.totalCount.toLocaleString('ko-KR')}개`);
   await expect(page.locator(".section-heading")).toContainText(`${data.totalPages}페이지`);
   for (const width of [1280,390,320]) {
@@ -90,6 +109,6 @@ test("numbered pages show exact totals, jump to last and recover from out-of-ran
   await expect(page.locator("a.result-row")).toHaveCount(0);
   await page.getByRole("link", { name: "첫 페이지로 돌아가기" }).click();
   await expect(navigation.locator('[aria-current="page"]')).toHaveText("1");
-  expect(new URL(page.url()).searchParams.get('sort')).toBe('employees');
+  expect(new URL(page.url()).searchParams.get('sort')).toBeNull();
   expect(new URL(page.url()).searchParams.has('page')).toBe(false);
 });

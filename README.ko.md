@@ -6,8 +6,12 @@
 업종·가입자 규모별 비교 지표를 확인합니다. 최대 3개 사업장 비교, 브라우저별
 최근 방문 기록, 관리자용 이용 통계 화면을 제공합니다.
 
+검색은 두 글자 이상이며 기본은 최신 적재월·가입자 수순입니다. `과거 사업장 포함`으로
+이전 기록도 조회할 수 있으며, 최신 자료에 없다는 것이 폐업을 뜻하지는 않습니다.
+
 급여는 실제 지급액이 아닌 **국민연금 기반 추정치**입니다. 가입자 수는 법적 기업
 규모 분류가 아니며, 이름이 비슷하다고 같은 회사로 판단하거나 이력을 합치지 않습니다.
+`/일용/`, `(일용)`, `건설일용관리` 등 명시적 일용 사업장은 적재하지 않습니다.
 
 **기술:** Next.js, TypeScript, Tailwind CSS, SQLite/Drizzle, Chart.js. Node.js 22 이상과 npm이 필요합니다.
 
@@ -65,6 +69,9 @@ Next.js는 시작할 때 프로젝트 `.env`와 `.env.local`을 읽으며 `.env.
 | 수집 재개·갱신 후 검증된 최신 원본만 유지 | `npm run sync:nps-history -- --prune` |
 | 통계 / 비교 지표 복구 | `npm run stats:rebuild` / `npm run benchmarks:rebuild` |
 | DB 교체·직접 SQL 수정 후 검색 재생성 | `npm run search:rebuild` 후 `npm run search:refresh-latest` |
+| 기존 DB에 가입자 수 보조 인덱스 추가 | `npm run search:index-employees` (전체 이력 재생성 없이) |
+| 기존 DB에 두 글자 보조 인덱스 추가 | `npm run search:rebuild-short` |
+| 기존 일용 사업장·이력 정리 | `npm run data:prune-daily`로 집계 후 `-- --apply`로 별도 검증 DB 생성·수동 교체 |
 | 최근 30일 이용 통계 보고서 | `npm run metrics:report -- 30` |
 | macOS 월간 자동 수집 등록 | `npm run sync:start-job` |
 | 빌드 후 macOS 운영 웹 서비스 등록 | `npm run web:start-job` |
@@ -87,6 +94,6 @@ macOS 서비스는 사용자 로그인 시 시작됩니다. 수집 등록에는 
 `npx playwright install chromium` 후 `npm run test:browser`를 실행합니다.
 다른 주소는 `PLAYWRIGHT_BASE_URL`로 지정합니다.
 
-[API 명세](docs/api.md) · [메트릭·인증 상세](docs/usage-metrics.md) · [구현 기록](docs/implementation-status.md) · [변경 이력](CHANGELOG.md)
+[API 명세](docs/api.md) · [메트릭·인증 상세](docs/usage-metrics.md) · [변경 이력](CHANGELOG.md)
 
 코드는 [MIT 라이선스](LICENSE)입니다. 공개 데이터는 별도의 [원본 이용 조건](https://www.data.go.kr/data/15083277/fileData.do)을 따르며 이 저장소에 배포하지 않습니다.

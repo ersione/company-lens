@@ -3,11 +3,11 @@ import test from "node:test";
 import { validateCompanySearch } from "@/lib/company-search-input";
 
 test("web and API search share length, wildcard, control and numeric validation", () => {
-  for (const query of ["회사", "a", "abc%", "abc_", "abc\0", "\n삼성전자", "삼성전자\t", "---", "1--", "1 - 2", "가".repeat(101)]) {
+  for (const query of ["가", "a", "𠮷", "abc%", "abc_", "abc\0", "\n삼성전자", "삼성전자\t", "---", "1--", "가".repeat(101)]) {
     assert.ok(validateCompanySearch(query).error, query);
     assert.ok(validateCompanySearch(query, true).error, query);
   }
-  for (const query of ["삼성전자", " 네이버 ", "123-456", "가".repeat(100), "𠮷𠮷𠮷"]) {
+  for (const query of ["티빙", " 티빙 ", "회사", "ab", "삼성전자", " 네이버 ", "12", "1 - 2", "123-456", "가".repeat(100), "𠮷𠮷"]) {
     assert.deepEqual(validateCompanySearch(query), { query: query.trim(), error: null });
     assert.deepEqual(validateCompanySearch(query, true), validateCompanySearch(query));
   }

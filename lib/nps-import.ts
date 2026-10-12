@@ -11,6 +11,7 @@ import { sourceFiles } from "@/db/schema";
 import type { createDb } from "@/db/client";
 import { estimateSalary } from "@/lib/pension";
 import { refreshMonthlyStatistics } from "@/lib/monthly-statistics";
+import { isDailyWorkerWorkplace } from "@/lib/daily-worker";
 export { estimateSalary } from "@/lib/pension";
 
 export const NPS_SOURCE_NAME = "국민연금공단 사업장 가입자 명부";
@@ -231,6 +232,7 @@ export async function importNpsCsv(filePath: string, client: ReturnType<typeof c
   `;
   let sourceFile: typeof sourceFiles.$inferSelect | undefined;
   let rowCount = 0;
+  let excludedRowCount = 0;
   client.sqlite.exec("BEGIN IMMEDIATE");
   try {
     client.sqlite.exec(`CREATE TEMP TABLE nps_import_rows (
@@ -252,7 +254,8 @@ export async function importNpsCsv(filePath: string, client: ReturnType<typeof c
         }).returning().get();
       }
       if (row.snapshotMonth !== sourceFile.snapshotMonth) throw new Error("파일에는 하나의 자료생성년월만 있어야 합니다.");
-      stage.run(row);
+      if (isDailyWorkerWorkplace(row.name)) excludedRowCount += 1;
+      else stage.run(row);
       rowCount += 1;
       if (rowCount % 50000 === 0) onProgress?.(rowCount);
     }
@@ -294,7 +297,8 @@ export async function importNpsCsv(filePath: string, client: ReturnType<typeof c
     const { count } = client.sqlite.prepare("SELECT COUNT(*) AS count FROM company_snapshots WHERE source_file_id = ?").get(sourceFile.id) as { count: number };
     refreshMonthlyStatistics(client.sqlite, sourceFile.snapshotMonth);
     client.sqlite.exec("COMMIT");
-    return { sourceFile: { ...sourceFile, rowCount }, companyCount: count, snapshotCount: count, rowCount, aggregatedRowCount: rowCount - count };
+    return { sourceFile: { ...sourceFile, rowCount }, companyCount: count, snapshotCount: count, rowCount,
+      excludedRowCount, aggregatedRowCount: rowCount - excludedRowCount - count };
   } catch (error) {
     client.sqlite.exec("ROLLBACK");
     throw error;

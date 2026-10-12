@@ -63,7 +63,7 @@ export async function syncNpsHistory(client: ReturnType<typeof createDb>, option
       else {
         const result = await importNpsCsv(entry.filePath!, client, (rows) => log(`  ${rows} rows`), { publishedAt: entry.publishedAt });
         entry.status = "imported"; entry.snapshotMonth = result.sourceFile.snapshotMonth; imported++;
-        log(`  Imported ${result.rowCount} rows for ${entry.snapshotMonth}`);
+        log(`  Read ${result.rowCount} rows for ${entry.snapshotMonth}; imported ${result.snapshotCount} snapshots, excluded ${result.excludedRowCount} daily-worker rows`);
       }
       delete entry.error;
       client.sqlite.pragma("wal_checkpoint(TRUNCATE)");
