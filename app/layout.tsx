@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import "@fontsource-variable/noto-sans-kr/wght.css";
 import "./globals.css";
+import "@ersione/design-system/styles.css";
+import "./design-system.css";
+import Image from "next/image";
+import ersioneSymbol from "@ersione/design-system/symbol.svg";
 import Link from "next/link";
-import { ScanSearch, Database } from "lucide-react";
+import { Database } from "lucide-react";
 import { publicOrigin, siteTitle, siteDescription, socialMetadata } from "@/lib/social-metadata";
 
 export const metadata: Metadata = {
@@ -14,9 +18,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   // Translation extensions such as Trancy add root attributes before hydration.
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body>
+      <body className="eds-theme" data-brand="blue" data-dark="false">
         <header className="site-header site-header-navigation">
-          <Link href="/" className="brand"><ScanSearch size={25} aria-hidden="true" />Company Lens</Link>
+          <Link href="/" className="brand"><Image src={ersioneSymbol} alt="" width={36} height={36} /><span>Company Lens<small>BY ERSIONE</small></span></Link>
           <nav className="header-navigation" aria-label="주 메뉴">
             <Link href="/">회사 검색</Link><Link href="/statistics">고용 동향</Link>
             <Link href="/employment-trends">고용 변화</Link>

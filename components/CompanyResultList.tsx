@@ -1,3 +1,4 @@
+import { Badge } from "@ersione/design-system/react";
 import Link from "next/link";
 import type { CompanySearchResult } from "@/lib/company-queries";
 import { formatCurrency, formatIndustry, formatNumber, formatSnapshotMonth } from "@/lib/format";
@@ -22,15 +23,15 @@ export function CompanyResultList({ results, latestMonth }: { results: CompanySe
             <strong><Building2 size={18} aria-hidden="true" />{company.name}</strong>
             <span>{formatIndustry(company.industry)}</span>
             <small><MapPin size={13} aria-hidden="true" />{company.address ?? "주소 정보 없음"}</small>
-            {latestMonth && company.snapshotMonth !== latestMonth && <span className="historical-workplace">
+            {latestMonth && company.snapshotMonth !== latestMonth && <Badge className="historical-workplace" tone="warning">
               최신 자료에 없음 · 마지막 관측 {formatSnapshotMonth(company.snapshotMonth)}
-            </span>}
+            </Badge>}
           </div>
           <div className="result-metrics">
             <Metric label="기준월" value={formatSnapshotMonth(company.snapshotMonth)} />
-            <Metric label="가입자수" value={`${formatNumber(company.employeeCount)}명`} />
-            <Metric label="연봉 추정" value={formatCurrency(company.estimatedAverageAnnualSalary)} />
-            <Metric label="취득/상실" value={`${formatNumber(company.newJoiners)} / ${formatNumber(company.departures)}`} />
+            <Metric tone="people" label="가입자수" value={`${formatNumber(company.employeeCount)}명`} />
+            <Metric tone="salary" label="연봉 추정" value={formatCurrency(company.estimatedAverageAnnualSalary)} />
+            <Metric tone="flow" label="취득/상실" value={`${formatNumber(company.newJoiners)} / ${formatNumber(company.departures)}`} />
           </div>
           <ArrowUpRight className="result-arrow" size={20} aria-hidden="true" />
         </Link>
@@ -39,9 +40,9 @@ export function CompanyResultList({ results, latestMonth }: { results: CompanySe
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, tone }: { label: string; value: string; tone?: "people" | "salary" | "flow" }) {
   return (
-    <span>
+    <span data-tone={tone}>
       <small>{label}</small>
       <b>{value}</b>
     </span>

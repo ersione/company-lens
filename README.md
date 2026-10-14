@@ -96,6 +96,6 @@ Run `npm test`, `npm run typecheck` and an isolated `npm run build`. Browser che
 a running server, matching fixture data and Chromium: `npx playwright install chromium`,
 then `npm run test:browser` (`PLAYWRIGHT_BASE_URL` overrides the target).
 
-[API contract](docs/api.md) · [Public statistics](docs/public-statistics.md) · [Metrics/auth details](docs/usage-metrics.md) · [Changelog](CHANGELOG.md)
+[Design system](docs/design-system.md) · [API contract](docs/api.md) · [Public statistics](docs/public-statistics.md) · [Metrics/auth details](docs/usage-metrics.md) · [Changelog](CHANGELOG.md)
 
 Code: [MIT](LICENSE). Public data has separate [source usage conditions](https://www.data.go.kr/data/15083277/fileData.do); raw data is not distributed here.

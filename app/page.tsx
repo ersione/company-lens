@@ -1,3 +1,4 @@
+import { Alert } from "@ersione/design-system/react";
 import { CompanyResultList } from "@/components/CompanyResultList";
 import { SearchForm } from "@/components/SearchForm";
 import { SearchPagination } from "@/components/SearchPagination";
@@ -57,7 +58,7 @@ async function Home({ searchParams }: PageProps, usage: UsageEvent) {
         </div>}
         {error && <h1 className="search-error-heading">검색 조건을 확인해 주세요</h1>}
         <SearchForm key={`${query}:${error ?? ""}:${JSON.stringify(options)}`} query={query} error={error} options={options} />
-        {error && <p className="search-error" id="search-error" role="alert"><CircleAlert size={18} aria-hidden="true" /><span>{error}</span></p>}
+        {error && <Alert tone="error" className="search-error" id="search-error" role="alert"><CircleAlert size={18} aria-hidden="true" /><span>{error}</span></Alert>}
         {!searchMode && <RecentCompanies />}
         {!searchMode && <p className="caveat search-caveat"><ShieldCheck size={16} aria-hidden="true" />
           <span>급여는 국민연금 기반 추정치이며, 실제 급여와 다를 수 있습니다.</span>

@@ -30,6 +30,7 @@
     "test:browser": "playwright test"
   },
   "dependencies": {
+    "@ersione/design-system": "github:ersione/ersione-design-system#7f12c6fef91ad0e71ac2df9800bf32ff03a151b8",
     "@fontsource-variable/noto-sans-kr": "5.3.0",
     "@tailwindcss/postcss": "^4.1.0",
     "better-sqlite3": "^13.0.3",

@@ -1,3 +1,4 @@
+import { Metric, MetricPanel } from "@ersione/design-system/react";
 import type { getStatisticsOverview } from "@/lib/company-queries";
 import { formatNumber, formatSnapshotMonth } from "@/lib/format";
 import { Building2, UsersRound, History, ChartNoAxesCombined, Layers3 } from "lucide-react";
@@ -9,12 +10,14 @@ export function DatasetOverview({ statistics }: { statistics: NonNullable<Return
     !["업종 정보 없음", "BIZ_NO미존재사업장", "해당없음", "복수 업종"].includes(row.label));
   return <section className="dataset-overview" aria-label="공개 데이터 통계">
     <div className="section-heading"><h2>공개 데이터 현황</h2><span>{formatSnapshotMonth(statistics.snapshotMonth)} 기준</span></div>
-    <div className="overview-metrics">
-      <div><span><Building2 size={16} aria-hidden="true" />등록 사업장</span><strong>{formatNumber(statistics.activeWorkplaceCount)}<small>곳</small></strong><small>현재 가입 상태인 사업장</small></div>
-      <div><span><UsersRound size={16} aria-hidden="true" />가입자 수 합계</span><strong>{formatNumber(statistics.subscriberCount)}<small>건</small></strong><small>사업장별 가입 건수 기준</small></div>
-      <div><span><History size={16} aria-hidden="true" />축적된 월별 자료</span><strong>{statistics.monthCount}<small>개월</small></strong>
-        <small>{statistics.firstMonth} ~ {statistics.lastMonth}</small></div>
-    </div>
+    <MetricPanel className="dataset-metrics">
+      <Metric label={<><Building2 size={16} aria-hidden="true" />등록 사업장</>}
+        value={formatNumber(statistics.activeWorkplaceCount)} unit="곳" tone="people" description="현재 가입 상태인 사업장" />
+      <Metric label={<><UsersRound size={16} aria-hidden="true" />가입자 수 합계</>}
+        value={formatNumber(statistics.subscriberCount)} unit="건" tone="people" description="사업장별 가입 건수 기준" />
+      <Metric label={<><History size={16} aria-hidden="true" />축적된 월별 자료</>}
+        value={statistics.monthCount} unit="개월" tone="flow" description={`${statistics.firstMonth} ~ ${statistics.lastMonth}`} />
+    </MetricPanel>
     <div className="overview-distributions">
       <div><h3><ChartNoAxesCombined size={18} aria-hidden="true" />사업장 규모</h3>{sizes.map((row) => <div className="distribution-row" key={row.label}>
         <span>{row.label}</span><div className="distribution-track"><div style={{ width: `${100 * row.workplaceCount / Math.max(1, statistics.activeWorkplaceCount)}%` }} /></div>

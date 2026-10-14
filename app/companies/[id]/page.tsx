@@ -1,3 +1,4 @@
+import { Metric, MetricPanel, Table, TableContainer } from "@ersione/design-system/react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -67,29 +68,29 @@ async function CompanyPage({ params }: PageProps, usage: UsageEvent) {
         </a>
       </section>
 
-      <section className="detail-metrics" aria-label="주요 지표">
-        <div className="detail-metric salary-metric">
-          <span className="metric-label"><Wallet size={17} aria-hidden="true" />추정 평균 연봉</span>
-          <strong>{formatCurrency(company.estimatedAverageAnnualSalary)}</strong>
+      <MetricPanel className="detail-metrics" role="region" aria-label="주요 지표">
+        <Metric className="detail-metric salary-metric" tone="salary"
+          label={<><Wallet size={17} aria-hidden="true" />추정 평균 연봉</>}
+          value={formatCurrency(company.estimatedAverageAnnualSalary)}>
           <MonthChange value={salaryChange === null ? null : Number(salaryChange.toFixed(1))} unit="%" />
           <div className="metric-secondary monthly-salary"><span>추정 평균 월급</span><strong>{formatCurrency(company.estimatedAverageMonthlySalary)}</strong></div>
-        </div>
-        <div className="detail-metric subscriber-metric">
-          <span className="metric-label"><Users size={17} aria-hidden="true" /><span><span className="metric-label-context">국민연금 </span>가입자 수</span></span>
-          <strong>{withUnit(company.employeeCount, "명")}</strong>
+        </Metric>
+        <Metric className="detail-metric subscriber-metric" tone="people"
+          label={<><Users size={17} aria-hidden="true" /><span><span className="metric-label-context">국민연금 </span>가입자 수</span></>}
+          value={withUnit(company.employeeCount, "명")}>
           <MonthChange value={employeeChange} unit="명" />
           <div className="metric-secondary history-coverage"><strong>{history.length}개월</strong><span>고용 이력</span></div>
-        </div>
-        <div className="detail-metric movement-metric">
-          <span className="metric-label"><ArrowRightLeft size={17} aria-hidden="true" />취득·상실 순증</span>
-          <strong>{net === null ? "-" : `${signed(net)}명`}</strong>
+        </Metric>
+        <Metric className="detail-metric movement-metric" tone="flow"
+          label={<><ArrowRightLeft size={17} aria-hidden="true" />취득·상실 순증</>}
+          value={net === null ? "-" : `${signed(net)}명`}>
           <span className="metric-comparison metric-formula">신규취득 − 자격상실</span>
           <dl className="movement-breakdown">
             <div className="joiners"><dt>신규취득</dt><dd>{withUnit(company.newJoiners, "명")}</dd></div>
             <div className="departures"><dt>자격상실</dt><dd>{withUnit(company.departures, "명")}</dd></div>
           </dl>
-        </div>
-      </section>
+        </Metric>
+      </MetricPanel>
       <p className="detail-caveat"><Info size={15} aria-hidden="true" />국민연금 기반 추정치로, 실제 급여·재직 인원 및 입·퇴사와 다를 수 있습니다.</p>
 
       <EmploymentSummary history={history} />
@@ -128,30 +129,30 @@ async function CompanyPage({ params }: PageProps, usage: UsageEvent) {
       <section className="monthly-records">
         <details className="history-data">
           <summary>월별 원자료 · {history.length}개월</summary>
-          <div className="history-table">
-            <table>
+          <TableContainer className="history-table" role="region" aria-label="월별 원자료 표" tabIndex={0}>
+            <Table>
               <thead>
                 <tr>
-                  <th>기준월</th>
-                  <th>가입자수</th>
-                  <th>연봉 추정</th>
-                  <th>취득</th>
-                  <th>상실</th>
+                  <th scope="col" data-numeric>기준월</th>
+                  <th scope="col" data-numeric>가입자수</th>
+                  <th scope="col" data-numeric>연봉 추정</th>
+                  <th scope="col" data-numeric>취득</th>
+                  <th scope="col" data-numeric>상실</th>
                 </tr>
               </thead>
               <tbody>
                 {[...history].reverse().map((snapshot) => (
                   <tr key={snapshot.snapshotMonth}>
-                    <td>{formatSnapshotMonth(snapshot.snapshotMonth)}</td>
-                    <td>{formatNumber(snapshot.employeeCount)}</td>
-                    <td>{formatCurrency(snapshot.estimatedAverageAnnualSalary)}</td>
-                    <td>{formatNumber(snapshot.newJoiners)}</td>
-                    <td>{formatNumber(snapshot.departures)}</td>
+                    <td data-numeric>{formatSnapshotMonth(snapshot.snapshotMonth)}</td>
+                    <td data-numeric>{formatNumber(snapshot.employeeCount)}</td>
+                    <td data-numeric>{formatCurrency(snapshot.estimatedAverageAnnualSalary)}</td>
+                    <td data-numeric>{formatNumber(snapshot.newJoiners)}</td>
+                    <td data-numeric>{formatNumber(snapshot.departures)}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </Table>
+          </TableContainer>
         </details>
       </section>
 

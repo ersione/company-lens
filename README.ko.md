@@ -97,6 +97,6 @@ macOS 서비스는 사용자 로그인 시 시작됩니다. 수집 등록에는 
 `npx playwright install chromium` 후 `npm run test:browser`를 실행합니다.
 다른 주소는 `PLAYWRIGHT_BASE_URL`로 지정합니다.
 
-[API 명세](docs/api.md) · [공개 통계 기준](docs/public-statistics.md) · [메트릭·인증 상세](docs/usage-metrics.md) · [변경 이력](CHANGELOG.md)
+[디자인 시스템](docs/design-system.md) · [API 명세](docs/api.md) · [공개 통계 기준](docs/public-statistics.md) · [메트릭·인증 상세](docs/usage-metrics.md) · [변경 이력](CHANGELOG.md)
 
 코드는 [MIT 라이선스](LICENSE)입니다. 공개 데이터는 별도의 [원본 이용 조건](https://www.data.go.kr/data/15083277/fileData.do)을 따르며 이 저장소에 배포하지 않습니다.
