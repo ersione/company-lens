@@ -25,8 +25,8 @@ React 검토 화면은 디자인 시스템 저장소의 `examples/react/`입니�
 
 ## 현재 운영 빌드 (2026-10-14)
 
-launchd `com.ersione.company-lens-web`의 `NEXT_DIST_DIR=.next-eds-v021`가 검증한 v0.2.1 적용 빌드를 가리킵니다. 기존 `.next` 빌드는 보존했습니다.
-서비스 설정 백업: `data/logs/web-before-eds-v021-2403119c.plist` (Git 제외).
+launchd `com.ersione.company-lens-web`의 `NEXT_DIST_DIR=.next-search-nav-v2`가 검색 제출·상단 메뉴 개선을 포함한 v0.2.1 적용 빌드를 가리킵니다. 기존 `.next` 빌드는 보존했습니다.
+서비스 설정 백업: `data/logs/web-before-search-nav.plist` (Git 제외).
 다음 배포도 실행 중인 디렉터리를 덮어쓰지 말고 별도 NEXT_DIST_DIR에 빌드·검증한 뒤 launchd 환경변수를 전환하세요.
 후보 검사는 METRICS_DISABLED=1로 실행했으며 운영 서비스의 기존 이용 통계 설정은 유지합니다.
 
@@ -34,3 +34,7 @@ launchd `com.ersione.company-lens-web`의 `NEXT_DIST_DIR=.next-eds-v021`가 검�
 패키지 자체는 서버 렌더링 검사 6개와 Chromium 브라우저 검사 7개 및 GitHub CI를 통과했습니다.
 
 v0.2.1 검증: 타입 검사·운영 빌드 및 브라우저 검사 14개 통과. 펼친 셀렉트의 실제 검색 필터 적용, 60px 데스크톱 헤더, 320/390px 메뉴 이동 포함. 패키지 자체는 브라우저 검사 8개 및 GitHub CI 통과. 비지원 브라우저의 셀렉트 목록은 기본 picker로 유지합니다.
+
+검색 필터와 과거 사업장 포함은 임시 선택 상태로 유지하고 검색 버튼 또는 검색창 Enter로만 URL과 결과에 적용합니다. 초기화도 선택 상태만 비웁니다. 검색 버튼은 대기 문구에도 크기를 유지하고, 상단 메뉴는 아이콘과 aria-current로 현재 위치 및 상세 페이지의 상위 메뉴를 표시합니다.
+
+검색 제출·메뉴 개선 검증: 단위 테스트 75개, 타입 검사, 별도 운영 빌드, 관련 브라우저 검사 12개 통과. 빈 검색어의 필터 변경 시 검색 요청 없음, 버튼/Enter 제출, 초기화 후 제출·뒤로 가기, 응답 지연 중 버튼 크기 유지(1280/390/320px), 모바일 헤더와 상세 페이지 메뉴 표시를 확인했습니다.

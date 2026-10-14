@@ -11,6 +11,8 @@ test("current workplaces are default and historical results are labeled", async 
   await expect(checkbox).not.toBeChecked();
   await expect(page.locator("a.result-row")).toHaveCount(3);
   await checkbox.check();
+  await expect(page).not.toHaveURL(/includeHistory=true/);
+  await page.getByRole("button", { name: "검색", exact: true }).click();
   await expect(page).toHaveURL(/includeHistory=true/);
   await expect(page.locator("a.result-row")).toHaveCount(11);
   await expect(page.locator(".historical-workplace")).toHaveCount(8);
@@ -25,6 +27,7 @@ test("current workplaces are default and historical results are labeled", async 
     await page.locator(".search-section").screenshot({ path: `test-results/history-controls-${width}.png` });
   }
   await checkbox.uncheck();
+  await page.getByRole("button", { name: "검색", exact: true }).click();
   await expect(page.locator("a.result-row")).toHaveCount(3);
 });
 
@@ -35,6 +38,7 @@ test("historical option survives paging and invalid values are rejected", async 
   expect(new URL(page.url()).searchParams.get("includeHistory")).toBe("true");
   await expect(page.getByRole("checkbox", { name: "과거 사업장 포함" })).toBeChecked();
   await page.getByRole("checkbox", { name: "과거 사업장 포함" }).uncheck();
+  await page.getByRole("textbox", { name: "회사 검색", exact: true }).press("Enter");
   await expect(page).not.toHaveURL(/page=2/);
   for (const value of ["1", "", "true&includeHistory=false"]) {
     expect((await request.get(`/api/v1/companies?q=국민은행&includeHistory=${value}`)).status()).toBe(400);

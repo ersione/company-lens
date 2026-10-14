@@ -4,12 +4,15 @@ test('compact branding and themed picker preserve real search filtering and mobi
   await page.setViewportSize({width:1280,height:900});
   await page.goto('/?q=삼성전자');
   await expect(page.locator('.brand')).toHaveText('Company Lens');
+  await expect(page.getByRole('navigation',{name:'주 메뉴'}).locator('[aria-current=page]')).toHaveText('회사 검색');
   const header=await page.locator('.site-header').boundingBox();
   expect(header!.height).toBeLessThanOrEqual(64);
   const region=page.getByRole('combobox',{name:'지역',exact:true});
   await region.click();
   await expect(page.getByRole('option',{name:'서울',exact:true})).toBeVisible();
   await page.getByRole('option',{name:'서울',exact:true}).click();
+  expect(new URL(page.url()).searchParams.has('region')).toBe(false);
+  await page.getByRole('button',{name:'검색',exact:true}).click();
   await expect.poll(()=>new URL(page.url()).searchParams.get('region')).toBe('서울특별시');
   expect(new URL(page.url()).searchParams.get('q')).toBe('삼성전자');
   await expect(page.getByRole('combobox',{name:'지역',exact:true})).toHaveValue('서울특별시');
@@ -24,6 +27,7 @@ test('compact branding and themed picker preserve real search filtering and mobi
     await page.keyboard.press('Escape');
     await page.getByRole('navigation',{name:'주 메뉴'}).getByRole('link',{name:'사업장 비교',exact:true}).click();
     await expect(page).toHaveURL(/\/compare$/);
+    await expect(page.getByRole('navigation',{name:'주 메뉴'}).locator('[aria-current=page]')).toHaveText('사업장 비교');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   }
 });

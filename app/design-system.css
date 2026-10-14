@@ -3,8 +3,11 @@
 .site-header.site-header-navigation { background: var(--surface); border-top: 0; min-height: 60px; padding-block: 10px; }
 .site-header .brand { color: var(--text); gap: 10px; flex-shrink: 0; }
 .site-header .brand > span { color: var(--text); font-size: 19px; font-weight: 700; letter-spacing: -.6px; }
-.header-navigation { gap: 16px; font-size: 13px; }
-.header-navigation a { color: var(--muted); padding-block: 4px; }
+.header-navigation { gap: 4px; font-size: 13px; }
+.header-navigation a { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; color: var(--muted); padding: 8px 10px; border: 1px solid transparent; border-radius: var(--radius-md); }
+.header-navigation a:hover { background: var(--tint); }
+.header-navigation a[aria-current="page"] { color: var(--accent); background: var(--tint); border-color: var(--line); font-weight: 700; }
+.header-navigation svg { flex-shrink: 0; }
 .header-navigation a:hover { color: var(--accent); }
 .header-navigation a:focus-visible { outline-offset: -2px; border-radius: var(--radius-sm); }
 .page-shell { padding-top: 40px; }
@@ -16,7 +19,8 @@
 .search-form { padding: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; gap: 12px; }
 .search-form:focus-within { box-shadow: none; }
 .search-form .eds-input { height: 48px; padding: 12px 16px 12px 48px; border: 1px solid var(--control-border); border-radius: var(--radius-md); background: var(--bg); color: var(--text); }
-.search-form .eds-button { min-height: 48px; border-radius: var(--radius-md); background: var(--accent); color: var(--control-check); font-size: 14px; font-weight: 600; }
+.search-form .eds-button { height: 48px; min-height: 48px; min-width: 0; padding-inline: 12px; white-space: nowrap; border-radius: var(--radius-md); background: var(--accent); color: var(--control-check); font-size: 14px; font-weight: 600; }
+.search-form .eds-button svg { flex-shrink: 0; }
 .search-form .eds-button:hover:not(:disabled) { background: var(--accent); }
 .search-form .eds-button:disabled { background: var(--disabled-bg); color: var(--disabled-fg); }
 .search-filters { gap: 12px 16px; }
@@ -29,7 +33,7 @@
 .search-results-view .company-search-form { padding: 16px; }
 .search-results-view .search-form { padding: 0; }
 .search-results-view .search-form .eds-input { height: 44px; }
-.search-results-view .search-form .eds-button { min-height: 44px; }
+.search-results-view .search-form .eds-button { height: 44px; min-height: 44px; }
 .search-results-heading .result-query { color: var(--accent); }
 .dataset-overview { border-top: 0; padding-top: 0; }
 .dataset-metrics { margin: 20px 0 28px; }
@@ -83,11 +87,12 @@
   .search-filters { gap: 10px; }
 }
 @media(max-width: 600px) {
-  .header-navigation { width: 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; gap: 16px; font-size: 12px; margin-left: 0; padding-bottom: 4px; scrollbar-width: thin; }
-  .search-form { grid-template-columns: minmax(0, 1fr) 76px; gap: 8px; }
+  .header-navigation { width: 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; gap: 4px; font-size: 12px; margin-left: 0; padding-bottom: 4px; scrollbar-width: thin; }
+  .header-navigation a { padding-block: 6px; }
+  .search-form { grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; }
   .search-form .eds-input { font-size: 14px; padding-left: 36px; padding-right: 8px; }
   .search-input-icon { left: 12px; width: 18px; }
-  .search-form .eds-button { padding-inline: 10px; gap: 6px; }
+  .search-form .eds-button { padding-inline: 8px; gap: 6px; }
   .search-filters .history-filter { min-height: 32px; }
   .detail-metrics.eds-metric-panel { grid-template-columns: minmax(0, 1fr); padding: 0 20px; }
   .detail-metrics.eds-metric-panel > .detail-metric { padding: 20px 0; }
@@ -100,3 +105,5 @@
 @media(max-width: 600px) { .detail-metric.eds-metric:first-child { border-bottom: 0; } }
 /* A decrease is data, not an error state. Labels/signs carry its direction. */
 .employment-trends, .employment-trends.employment-declining { --movement: var(--data-flow); }
+
+button.filter-reset { border: 0; padding: 0; background: transparent; color: var(--accent); cursor: pointer; font: inherit; font-size: 13px; }

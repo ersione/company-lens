@@ -22,13 +22,16 @@ test("filters submit, reset the page, survive reload/back and stay within mobile
   await page.goto("/?q=삼성전자&page=2");
   await expect(page.getByRole("combobox", { name: "정렬", exact: true })).toHaveValue("employees");
   await page.getByRole("combobox", { name: "지역", exact: true }).selectOption("경기도");
-  await expect(page).toHaveURL(/region=/);
-  expect(new URL(page.url()).searchParams.has("page")).toBe(false);
+  await expect(page).toHaveURL(/page=2/);
   await expect(page.getByRole("combobox", { name: "지역", exact: true })).toHaveValue("경기도");
   await page.getByRole("combobox", { name: "가입자 규모" }).selectOption("50");
-  await expect(page).toHaveURL(/minEmployees=50/);
+  expect(new URL(page.url()).searchParams.has("minEmployees")).toBe(false);
   await page.getByRole("combobox", { name: "정렬", exact: true }).selectOption("employees");
+  await expect(page).toHaveURL(/page=2/);
+  await page.getByRole("button", { name: "검색", exact: true }).click();
+  await expect(page).toHaveURL(/minEmployees=50/);
   await expect(page).toHaveURL(/sort=employees/);
+  expect(new URL(page.url()).searchParams.has("page")).toBe(false);
   await page.reload();
   await expect(page.getByRole("combobox", { name: "지역", exact: true })).toHaveValue("경기도");
   await expect(page.getByRole("combobox", { name: "가입자 규모" })).toHaveValue("50");
@@ -50,8 +53,11 @@ test("filters submit, reset the page, survive reload/back and stay within mobile
     await page.screenshot({ path: `test-results/search-filters-${width}.png`, fullPage: true });
     await page.locator(".search-section").screenshot({ path: `test-results/search-controls-${width}.png` });
   }
-  await page.getByRole("link", { name: "초기화", exact: true }).click();
+  await page.getByRole("button", { name: "초기화", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "지역", exact: true })).toHaveValue("");
+  await expect(page).toHaveURL(/minEmployees=50/);
+  await page.getByRole("textbox", { name: "회사 검색", exact: true }).press("Enter");
+  await expect(page).not.toHaveURL(/minEmployees=50/);
   await page.goBack();
   await expect(page.getByRole("combobox", { name: "지역", exact: true })).toHaveValue("경기도");
   expect(errors).toEqual([]);
