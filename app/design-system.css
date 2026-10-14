@@ -107,7 +107,7 @@ button.filter-reset { border: 0; padding: 0; background: transparent; color: var
 .employment-summary .insight-heading h2 { color: var(--text); }
 .employment-summary .employment-narrative { color: var(--text); font-weight: 500; }
 .employment-summary-grid { gap: 16px; }
-.employment-summary-grid > div { background: var(--bg); }
+
 .employment-summary-grid > div > span, .employment-summary .employment-long-term > div > span { color: var(--muted); }
 .employment-summary .employment-summary-grid > div > small, .employment-summary .employment-long-term p { color: var(--muted); }
 .employment-summary .employment-long-term { border-color: var(--line); }
@@ -123,3 +123,8 @@ button.filter-reset { border: 0; padding: 0; background: transparent; color: var
 }
 
 .three-year-summary { display: flex; flex-direction: column; align-items: flex-start; }
+
+/* Domain layout; colors, surface levels and badges belong to EDS. */
+.employment-summary .employment-summary-grid > div + div { border-top: 1px solid var(--line); }
+.employment-summary .employment-summary-grid > .eds-data-panel { padding: 20px; }
+.employment-summary .annual-movement dt { color: var(--muted); margin-bottom: 6px; }

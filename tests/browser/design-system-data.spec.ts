@@ -30,6 +30,16 @@ test('shared highlights and chart lines use the same semantic palette', async ({
       return color === `rgb(${rgb.join(', ')})`;
     }, tone)).toBe(true);
   }
+  for (const tone of ['blue','teal','gray']) {
+    const panel=page.locator(`.employment-summary .eds-data-panel.eds-data--${tone}`).first();
+    await expect(panel).toBeVisible();
+    expect(await panel.evaluate((node,color)=>{
+      const style=getComputedStyle(node);
+      const rgb=style.getPropertyValue(`--palette-${color}-subtle`).trim().slice(1).match(/../g)!.map(value=>parseInt(value,16));
+      return style.backgroundColor===`rgb(${rgb.join(', ')})`;
+    },tone)).toBe(true);
+  }
+  await expect(page.locator('.annual-movement .eds-data-badge')).toHaveCount(2);
   const movementColors = await page.locator('.movement-breakdown dd').evaluateAll(nodes => nodes.map(node => getComputedStyle(node).color));
   const summaryColors = await page.locator('.annual-movement .eds-highlight').evaluateAll(nodes => nodes.map(node => getComputedStyle(node).color));
   expect(movementColors).toEqual(summaryColors);

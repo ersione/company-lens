@@ -1,4 +1,4 @@
-import { Card, DataHighlight, HighlightPanel } from "@ersione/design-system/react";
+import { DataPanel, DataBadge, DataHighlight, HighlightPanel } from "@ersione/design-system/react";
 import Link from "next/link";
 import { ArrowUpRight, History, TrendingUp, Search } from "lucide-react";
 import { employmentInsight, employmentNarrative, relatedNameQuery } from "@/lib/company-insights";
@@ -8,35 +8,35 @@ import { formatNumber, formatSnapshotMonth } from "@/lib/format";
 
 export function EmploymentSummary({ history }: { history: SnapshotHistory[] }) {
   const insight = employmentInsight(history);
-  return <HighlightPanel className="employment-summary" aria-labelledby="employment-summary-heading">
+  return <HighlightPanel tone="gray" className="employment-summary" aria-labelledby="employment-summary-heading">
     <div className="insight-heading"><TrendingUp size={20} aria-hidden="true" /><h2 id="employment-summary-heading">최근 고용 흐름</h2></div>
     <p className="employment-narrative">{employmentNarrative(insight)}</p>
     <div className="employment-summary-grid">
-      <Card padding="sm"><span>1년 전 대비 가입자</span><DataHighlight tone="blue" data-metric="people" size="lg" muted={insight.employeeDelta === null}>{insight.employeeDelta === null ? "비교 자료 없음"
+      <DataPanel tone="blue"><span>1년 전 대비 가입자</span><DataHighlight tone="blue" data-metric="people" size="lg" muted={insight.employeeDelta === null}>{insight.employeeDelta === null ? "비교 자료 없음"
         : `${insight.employeeDelta > 0 ? "+" : ""}${formatNumber(insight.employeeDelta)}명`}</DataHighlight>
         <small>{insight.employeeChangePercent === null ? "1년 전 같은 달의 유효한 자료가 필요합니다."
-          : `${insight.employeeChangePercent > 0 ? "+" : ""}${insight.employeeChangePercent.toFixed(1)}% · ${formatSnapshotMonth(insight.yearAgoMonth)} 대비`}</small></Card>
-      <Card padding="sm"><span>가입자 연속 변화</span><DataHighlight tone="blue" data-metric="people" size="sm" muted={insight.consecutiveMonths === 0}>{insight.consecutiveMonths === 0 ? "비교 자료 없음"
+          : `${insight.employeeChangePercent > 0 ? "+" : ""}${insight.employeeChangePercent.toFixed(1)}% · ${formatSnapshotMonth(insight.yearAgoMonth)} 대비`}</small></DataPanel>
+      <DataPanel tone="gray"><span>가입자 연속 변화</span><DataHighlight tone="blue" data-metric="people" size="sm" muted={insight.consecutiveMonths === 0}>{insight.consecutiveMonths === 0 ? "비교 자료 없음"
         : `${insight.consecutiveMonths}개월 연속 ${insight.direction === "up" ? "증가" : insight.direction === "down" ? "감소" : "유지"}`}</DataHighlight>
-        <small>최신 기준월까지 · 누락된 달은 연결하지 않습니다.</small></Card>
-      <Card padding="sm"><span>1년 전 대비 추정 연봉</span><DataHighlight tone="teal" data-metric="salary" size="lg" muted={insight.annualSalaryChangePercent === null}>{insight.annualSalaryChangePercent === null ? "비교 자료 없음"
+        <small>최신 기준월까지 · 누락된 달은 연결하지 않습니다.</small></DataPanel>
+      <DataPanel tone="teal"><span>1년 전 대비 추정 연봉</span><DataHighlight tone="teal" data-metric="salary" size="lg" muted={insight.annualSalaryChangePercent === null}>{insight.annualSalaryChangePercent === null ? "비교 자료 없음"
         : `${insight.annualSalaryChangePercent > 0 ? "+" : ""}${insight.annualSalaryChangePercent.toFixed(1)}%`}</DataHighlight>
-        <small>국민연금 기반 추정치 · 보험료율은 기준월별 적용</small></Card>
+        <small>국민연금 기반 추정치 · 보험료율은 기준월별 적용</small></DataPanel>
     </div>
     <div className="employment-long-term">
-      <div className="three-year-summary"><span>3년 전 대비 가입자</span>
+      <DataPanel tone="blue" className="three-year-summary"><span>3년 전 대비 가입자</span>
         <DataHighlight tone="blue" data-metric="people" size="lg" muted={insight.threeYearEmployeeDelta === null}
           secondary={insight.threeYearEmployeeChangePercent === null ? undefined : `${insight.threeYearEmployeeChangePercent > 0 ? "+" : ""}${insight.threeYearEmployeeChangePercent.toFixed(1)}%`}>
           {insight.threeYearEmployeeDelta === null ? "비교 자료 없음" : `${insight.threeYearEmployeeDelta > 0 ? "+" : ""}${formatNumber(insight.threeYearEmployeeDelta)}명`}
         </DataHighlight>
         <p>{insight.threeYearEmployeeDelta === null ? "3년 전 같은 달의 유효한 자료가 필요합니다."
           : `${formatSnapshotMonth(insight.threeYearsAgoMonth)} ${formatNumber(insight.threeYearsAgoEmployeeCount)}명 → ${formatSnapshotMonth(insight.snapshotMonth)} ${formatNumber(insight.latestEmployeeCount)}명`}</p>
-      </div>
-      <div className="annual-movement"><span>최근 12개월 취득·상실</span>
-        <dl><div><dt>신규취득</dt><dd><DataHighlight tone="teal" data-metric="joiners" muted={insight.twelveMonthNewJoiners === null}>{insight.twelveMonthNewJoiners === null ? "자료 부족" : `${formatNumber(insight.twelveMonthNewJoiners)}명`}</DataHighlight></dd></div>
-          <div><dt>자격상실</dt><dd><DataHighlight tone="orange" data-metric="departures" muted={insight.twelveMonthDepartures === null}>{insight.twelveMonthDepartures === null ? "자료 부족" : `${formatNumber(insight.twelveMonthDepartures)}명`}</DataHighlight></dd></div></dl>
+      </DataPanel>
+      <DataPanel tone="gray" className="annual-movement"><span>최근 12개월 취득·상실</span>
+        <dl><div><dt>신규취득</dt><dd><DataBadge tone="teal"><DataHighlight tone="teal" data-metric="joiners" muted={insight.twelveMonthNewJoiners === null}>{insight.twelveMonthNewJoiners === null ? "자료 부족" : `${formatNumber(insight.twelveMonthNewJoiners)}명`}</DataHighlight></DataBadge></dd></div>
+          <div><dt>자격상실</dt><dd><DataBadge tone="orange"><DataHighlight tone="orange" data-metric="departures" muted={insight.twelveMonthDepartures === null}>{insight.twelveMonthDepartures === null ? "자료 부족" : `${formatNumber(insight.twelveMonthDepartures)}명`}</DataHighlight></DataBadge></dd></div></dl>
         <p>12개월 자료가 모두 있을 때 합산 · 실제 입·퇴사 및 고유 인원과 다를 수 있습니다.</p>
-      </div>
+      </DataPanel>
     </div>
   </HighlightPanel>;
 }
