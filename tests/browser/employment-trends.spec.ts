@@ -26,6 +26,10 @@ test("employment rankings support yearly defaults, recent three months and decli
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/employment-trends");
   await expect(page.getByRole("heading", { name: "업종별 고용 변화", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "공개 통계" })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "주 메뉴" }).locator("[aria-current=page]")).toHaveText("고용 변화");
+  const highlight = page.locator(".employment-overview strong").first();
+  expect(await highlight.evaluate(node => { const style=getComputedStyle(node); const rgb=style.getPropertyValue("--palette-purple").trim().slice(1).match(/../g)!.map(value=>parseInt(value,16)); return style.color === `rgb(${rgb.join(", ")})`; })).toBe(true);
   const period = page.getByRole("navigation", { name: "비교 기간" });
   const direction = page.getByRole("navigation", { name: "고용 변화 방향" });
   const sort = page.getByRole("navigation", { name: "고용 변화 정렬" });

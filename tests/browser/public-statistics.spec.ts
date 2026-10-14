@@ -57,6 +57,7 @@ test("public statistics expose precomputed history, interactive charts and annua
 test("industry and region navigation, metadata and responsive layouts work", async ({ page }) => {
   await page.goto("/industries");
   await expect(page.getByRole("heading", { name: "업종별 현황", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "공개 통계" })).toHaveCount(0);
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -75,9 +76,11 @@ test("industry and region navigation, metadata and responsive layouts work", asy
   await expect(page.locator(".statistics-canvas[data-ready=true]")).toBeVisible();
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /companylens\.ersione\.com\/industries\//);
-  await page.getByRole("navigation", { name: "공개 통계" }).getByRole("link", { name: "지역별 현황" }).click();
+  await page.getByRole("navigation", { name: "주 메뉴" }).getByRole("link", { name: "지역별", exact: true }).click();
   await page.getByLabel("지역 선택").selectOption("경기도");
   await expect(page.getByRole("heading", { name: "경기도", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "공개 통계" })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "주 메뉴" }).locator("[aria-current=page]")).toHaveText("지역별");
   await expect(page.locator(".statistics-region-note")).toContainText("과거 시점의 소재지");
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });

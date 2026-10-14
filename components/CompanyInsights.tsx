@@ -34,7 +34,7 @@ export function EmploymentSummary({ history }: { history: SnapshotHistory[] }) {
       </div>
       <div className="annual-movement"><span>최근 12개월 취득·상실</span>
         <dl><div><dt>신규취득</dt><dd><DataHighlight tone="teal" data-metric="joiners" muted={insight.twelveMonthNewJoiners === null}>{insight.twelveMonthNewJoiners === null ? "자료 부족" : `${formatNumber(insight.twelveMonthNewJoiners)}명`}</DataHighlight></dd></div>
-          <div><dt>자격상실</dt><dd><DataHighlight tone="amber" data-metric="departures" muted={insight.twelveMonthDepartures === null}>{insight.twelveMonthDepartures === null ? "자료 부족" : `${formatNumber(insight.twelveMonthDepartures)}명`}</DataHighlight></dd></div></dl>
+          <div><dt>자격상실</dt><dd><DataHighlight tone="orange" data-metric="departures" muted={insight.twelveMonthDepartures === null}>{insight.twelveMonthDepartures === null ? "자료 부족" : `${formatNumber(insight.twelveMonthDepartures)}명`}</DataHighlight></dd></div></dl>
         <p>12개월 자료가 모두 있을 때 합산 · 실제 입·퇴사 및 고유 인원과 다를 수 있습니다.</p>
       </div>
     </div>

@@ -59,11 +59,11 @@
 .eds-table th:first-child, .eds-table td:first-child { text-align: left; }
 .compare-action, .statistics-back, .company-connections a:hover { color: var(--accent); }
 .compare-action { background: var(--tint); border-color: var(--line); border-radius: var(--radius-md); }
-.statistics-tabs a[aria-current] { color: var(--accent); border-color: var(--accent); }
 .statistics-summary { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); }
 .statistics-summary strong, .statistics-summary svg { color: var(--data-people); }
-.statistics-summary > div:nth-child(2) strong, .statistics-summary > div:nth-child(2) svg { color: var(--data-salary); }
-.statistics-summary > div:nth-child(3) strong, .statistics-summary > div:nth-child(3) svg { color: var(--data-flow); }
+.statistics-summary > div:nth-child(2) strong, .statistics-summary > div:nth-child(2) svg { color: var(--data-people); }
+.statistics-summary > div:nth-child(3) strong, .statistics-summary > div:nth-child(3) svg { color: var(--data-salary); }
+.statistics-summary > div:nth-child(4) strong, .statistics-summary > div:nth-child(4) svg { color: var(--data-flow); }
 .statistics-heading .eyebrow, .statistics-directory-heading p a { color: var(--accent); }
 .statistics-table thead th { background: var(--surface); }
 .statistics-table tbody tr:hover { background: var(--tint); }
@@ -114,12 +114,12 @@ button.filter-reset { border: 0; padding: 0; background: transparent; color: var
 .employment-summary .annual-movement dd { margin: 0; }
 
 /* Company Lens owns these domain choices; other products may map differently. */
-.eds-theme {
+.eds-theme[data-brand][data-dark] {
   --data-people: var(--palette-blue); --data-people-tint: var(--palette-blue-tint);
   --data-salary: var(--palette-teal); --data-salary-tint: var(--palette-teal-tint);
   --data-joiners: var(--palette-teal); --data-joiners-tint: var(--palette-teal-tint);
-  --data-departures: var(--palette-amber); --data-departures-tint: var(--palette-amber-tint);
-  --data-flow: var(--palette-amber); --data-flow-tint: var(--palette-amber-tint);
+  --data-departures: var(--palette-orange); --data-departures-tint: var(--palette-orange-tint);
+  --data-flow: var(--palette-purple); --data-flow-tint: var(--palette-purple-tint);
 }
 
 .three-year-summary { display: flex; flex-direction: column; align-items: flex-start; }

@@ -11,7 +11,7 @@ export function useChartTheme(ref: RefObject<HTMLCanvasElement | null>) {
   // Company Lens chooses this mapping; EDS only supplies the palette.
   return useMemo(() => theme ? { ...theme, colors: { ...theme.colors,
     people: theme.palette.blue, salary: theme.palette.teal,
-    joiners: theme.palette.teal, departures: theme.palette.amber, flow: theme.palette.amber,
+    joiners: theme.palette.teal, departures: theme.palette.orange, flow: theme.palette.purple,
     peopleFill: theme.tints.blue, salaryFill: theme.tints.teal,
   } } : null, [theme]);
 }

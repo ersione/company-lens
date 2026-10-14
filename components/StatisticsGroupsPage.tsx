@@ -1,5 +1,5 @@
 import { StatisticsGroupSelect } from "@/components/StatisticsGroupSelect";
-import { StatisticsDistribution, StatisticsHeading, StatisticsNotes, StatisticsTable, StatisticsTabs } from "@/components/StatisticsView";
+import { StatisticsDistribution, StatisticsHeading, StatisticsNotes, StatisticsTable } from "@/components/StatisticsView";
 import { getStatisticsGroups, getStatisticsHistory, statisticsHref } from "@/lib/public-statistics";
 import { formatNumber } from "@/lib/format";
 import Link from "next/link";
@@ -13,7 +13,7 @@ export function StatisticsGroupsPage({ dimension, requestedPage = "1" }: { dimen
   const totalPages = Math.max(1, Math.ceil(groups.length / 30));
   const page = typeof requestedPage === "string" && /^[1-9]\d{0,5}$/.test(requestedPage) ? Math.min(Number(requestedPage), totalPages) : 1;
   const href = (value: number) => `${statisticsHref(dimension)}${value > 1 ? `?page=${value}` : ""}`;
-  return <main className="page-shell statistics-page"><StatisticsTabs active={dimension} />
+  return <main className="page-shell statistics-page">
     <StatisticsHeading title={industry ? "업종별 현황" : "지역별 현황"} history={history}
       description={industry ? "업종별 고용 분포와 월별 변화" : "전국 시·도의 고용 분포와 월별 변화"} />
     {groups.length ? <>{page === 1 && <StatisticsDistribution rows={groups} dimension={dimension} total={history.at(-1)?.subscriberCount ?? 0} />}

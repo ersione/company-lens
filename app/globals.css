@@ -4,9 +4,6 @@
 .site-header.site-header-navigation { padding-block: 14px; }
 .header-navigation a { white-space: nowrap; }
 .header-navigation a:hover { color: var(--accent); }
-.statistics-tabs { display: flex; flex-wrap: wrap; gap: 8px 28px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
-.statistics-tabs a { display: flex; align-items: center; gap: 8px; padding: 0 0 15px; color: #667085; border-bottom: 3px solid transparent; font-size: 15px; font-weight: 600; }
-.statistics-tabs a[aria-current] { color: #0f766e; border-color: #0f766e; }
 .statistics-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 12px 0 28px; }
 .statistics-heading h1 { font-size: 32px; line-height: 1.4; margin: 7px 0 10px; overflow-wrap: anywhere; }
 .statistics-heading p { color: #667085; margin: 0; }
@@ -111,9 +108,6 @@ strong.employment-change { display: inline-flex; align-items: center; gap: 4px; 
   .statistics-heading { align-items: flex-start; flex-direction: column; gap: 14px; }
   .statistics-heading h1 { font-size: 26px; }
   .statistics-heading > div > p:not(.eyebrow) { font-size: 14px; }
-  .statistics-tabs { gap: 8px 12px; }
-  .statistics-tabs a { gap: 5px; font-size: 12px; }
-  .statistics-tabs a svg { display: none; }
   .statistics-summary > div { padding: 0 12px; }
   .statistics-summary strong { font-size: 21px; }
   .statistics-summary span { font-size: 12px; gap: 5px; }

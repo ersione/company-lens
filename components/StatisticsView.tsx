@@ -1,17 +1,8 @@
 import Link from "next/link";
-import { ArrowUpRight, Building2, Users, Wallet, Activity, CalendarDays, MapPin, Layers3 } from "lucide-react";
+import { ArrowUpRight, Building2, Users, Wallet, Activity, CalendarDays } from "lucide-react";
 import { StatisticsChart } from "@/components/StatisticsChart";
 import { formatCurrency, formatNumber, formatSnapshotMonth } from "@/lib/format";
 import { getYearlyStatistics, isKnownStatisticsGroup, statisticsChange, statisticsHref, type StatisticsRow, type YearlyStatisticsRow } from "@/lib/public-statistics";
-
-export function StatisticsTabs({ active }: { active: "total" | "industry" | "region" | "changes" }) {
-  return <nav className="statistics-tabs" aria-label="공개 통계">
-    <Link href="/statistics" aria-current={active === "total" ? "page" : undefined}><Activity size={17} />월간 고용 동향</Link>
-    <Link href="/employment-trends" aria-current={active === "changes" ? "page" : undefined}><Users size={17} />고용 변화</Link>
-    <Link href="/industries" aria-current={active === "industry" ? "page" : undefined}><Layers3 size={17} />업종별 현황</Link>
-    <Link href="/regions" aria-current={active === "region" ? "page" : undefined}><MapPin size={17} />지역별 현황</Link>
-  </nav>;
-}
 
 function signed(value: number) { return `${value > 0 ? "+" : ""}${formatNumber(value)}`; }
 
@@ -96,7 +87,7 @@ export function StatisticsAnnual({ rows }: { rows: YearlyStatisticsRow[] }) {
 export function StatisticsDetail({ history, title, dimension }: {
   history: StatisticsRow[]; title: string; dimension: "industry" | "region";
 }) {
-  return <main className="page-shell statistics-page"><StatisticsTabs active={dimension} />
+  return <main className="page-shell statistics-page">
     <Link className="statistics-back" href={statisticsHref(dimension)}>← {dimension === "industry" ? "업종" : "지역"} 전체 현황</Link>
     <StatisticsHeading title={title} history={history} description={dimension === "industry" ? "업종별 고용 규모와 급여의 변화" : "지역별 가입 사업장과 고용의 변화"} />
     <StatisticsSummary history={history} /><StatisticsChart history={history} />

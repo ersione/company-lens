@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, CalendarDays, TrendingDown, TrendingUp, Users } from "lucide-react";
-import { StatisticsNotes, StatisticsTabs } from "@/components/StatisticsView";
+import { StatisticsNotes } from "@/components/StatisticsView";
 import { employmentRateMinimum, getIndustryEmploymentChanges, rankEmploymentChanges, statisticsHref, type EmploymentChangeOptions } from "@/lib/public-statistics";
 import { formatNumber, formatSnapshotMonth } from "@/lib/format";
 import { socialMetadata } from "@/lib/social-metadata";
@@ -32,7 +32,6 @@ export default async function EmploymentTrendsPage({ searchParams }: {
   const period = options.months === 12 ? "1년 전" : options.months === 3 ? "3개월 전" : "전월";
   const maximum = Math.max(1, ...ranked.map((row) => Math.abs(options.sort === "rate" ? row.percent! : row.change)));
   return <main className={`page-shell statistics-page employment-trends${declining ? " employment-declining" : ""}`}>
-    <StatisticsTabs active="changes" />
     <header className="statistics-heading"><div><p className="eyebrow">EMPLOYMENT MOVEMENT</p><h1>업종별 고용 변화</h1>
       <p>어떤 업종에서 국민연금 가입자가 늘고 줄었을까요?</p></div>
       {data.month && <span className="statistics-date"><CalendarDays size={17} />{formatSnapshotMonth(data.month)} 기준</span>}

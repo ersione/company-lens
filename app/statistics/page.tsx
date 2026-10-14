@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { StatisticsChart } from "@/components/StatisticsChart";
-import { StatisticsAnnual, StatisticsHeading, StatisticsHistory, StatisticsNotes, StatisticsSummary, StatisticsTable, StatisticsTabs } from "@/components/StatisticsView";
+import { StatisticsAnnual, StatisticsHeading, StatisticsHistory, StatisticsNotes, StatisticsSummary, StatisticsTable } from "@/components/StatisticsView";
 import { getStatisticsGroups, getStatisticsHistory, getYearlyStatistics, isKnownStatisticsGroup } from "@/lib/public-statistics";
 import { socialMetadata } from "@/lib/social-metadata";
 
@@ -9,7 +9,7 @@ export const metadata = socialMetadata("월간 고용 동향 | Company Lens", "�
 
 export default function StatisticsPage() {
   const history = getStatisticsHistory("total", "전국");
-  return <main className="page-shell statistics-page"><StatisticsTabs active="total" />
+  return <main className="page-shell statistics-page">
     <StatisticsHeading title="월간 고용 동향" history={history} description="전국 가입 사업장의 고용 규모와 변화" />
     {history.length ? <><StatisticsSummary history={history} /><StatisticsChart history={history} />
       <section className="statistics-ranking"><div className="section-heading"><h2>고용 규모가 큰 업종</h2><Link href="/industries">업종 전체 보기 →</Link></div>
