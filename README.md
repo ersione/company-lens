@@ -33,17 +33,18 @@ Open `http://localhost:3100` or `http://<LAN-IP>:3100`. Alternatively, download 
 `npm run import:nps -- data/raw/<file.csv>` before provisioning indexes/benchmarks.
 Pages and APIs read SQLite only; they never call the data portal.
 
-For production, stop any server using port 3100, then:
+For the managed production service, build and validate an isolated candidate first:
 
 ```sh
-npm run build
-npm run start -- --hostname 0.0.0.0 --port 3100
+NEXT_DIST_DIR=.next-candidate npm run build
+METRICS_DISABLED=1 NEXT_DIST_DIR=.next-candidate npm run start -- --hostname 127.0.0.1 --port 3101
 ```
 
-Do not build over a running production `.next`; stop it first or use the same
-`NEXT_DIST_DIR=.next-candidate` for an isolated build and test server. Rebuild after code
-changes, not CSV imports. Before DB replacement, take a consistent SQLite backup and test
-the candidate on a separate port; retain the previous database/build for rollback.
+After browser validation, switch the launchd service's `NEXT_DIST_DIR` to the validated
+build and restart it. Preserve production metrics settings and the previous build for
+rollback; see [design system operations](docs/design-system.md). Do not overwrite a
+running production build. Rebuild after code changes, not CSV imports. Before DB
+replacement, take a consistent SQLite backup and test the candidate on a separate port.
 
 ## Shared Design System
 

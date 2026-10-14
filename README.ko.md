@@ -33,17 +33,18 @@ npm run dev -- --hostname 0.0.0.0 --port 3100
 `npm run import:nps -- data/raw/<file.csv>`로 적재한 뒤 인덱스·비교 지표를 생성해도 됩니다.
 화면과 API는 로컬 SQLite만 조회하며 데이터 포털을 직접 호출하지 않습니다.
 
-운영 모드는 3100 포트를 사용하는 서버를 먼저 중지한 뒤 실행합니다.
+관리 중인 운영 서비스는 별도 경로에서 후보 빌드·검증을 먼저 진행합니다.
 
 ```sh
-npm run build
-npm run start -- --hostname 0.0.0.0 --port 3100
+NEXT_DIST_DIR=.next-candidate npm run build
+METRICS_DISABLED=1 NEXT_DIST_DIR=.next-candidate npm run start -- --hostname 127.0.0.1 --port 3101
 ```
 
-실행 중인 운영 `.next`에 빌드를 덮어쓰지 마세요. 먼저 중지하거나 별도 빌드·테스트
-서버에 동일한 `NEXT_DIST_DIR=.next-candidate`를 지정합니다. 코드 변경 시에는 재빌드가
-필요하지만 CSV 적재 후에는 필요 없습니다. DB 교체 전에는 일관된 SQLite 백업을 만들고,
-새 DB를 별도 포트에서 검증하며 이전 DB·빌드는 복구용으로 보관합니다.
+브라우저 검증 후 launchd 서비스의 `NEXT_DIST_DIR`을 검증한 빌드로 전환하고
+재시작합니다. 운영 지표 설정과 이전 빌드는 보존합니다.
+[디자인 시스템 운영 문서](docs/design-system.md)를 참고하세요. 실행 중인 운영
+빌드에 덮어쓰지 마세요. 코드 변경 시 재빌드가 필요하지만 CSV 적재 후에는
+필요 없습니다. DB 교체 전에는 일관된 SQLite 백업을 만들고 새 DB를 별도 포트에서 검증합니다.
 
 ## 공통 디자인 시스템
 
