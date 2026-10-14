@@ -45,6 +45,23 @@ Do not build over a running production `.next`; stop it first or use the same
 changes, not CSV imports. Before DB replacement, take a consistent SQLite backup and test
 the candidate on a separate port; retain the previous database/build for rollback.
 
+## Shared Design System
+
+`@ersione/design-system` is pinned to `github:ersione/ersione-design-system#v0.5.1`. Shared React navigation, active states, form controls, chart themes and highlights are used throughout the app. Employment summaries compose DataPanel / DataBadge / DataHighlight. People=blue, salary/joiners=teal, departures=orange and movement=purple are this product's mappings.
+
+Install a newly released tag explicitly; plain npm install keeps the locked version. Then validate, build and deploy:
+
+```sh
+# Replace v0.5.1 below with the selected newly released tag
+npm install github:ersione/ersione-design-system#v0.5.1
+npm run typecheck
+npm test
+NEXT_DIST_DIR=.next-candidate npm run build
+METRICS_DISABLED=1 NEXT_DIST_DIR=.next-candidate npm run start -- --hostname 127.0.0.1 --port 3101
+```
+
+Production currently uses `.next-soft-v051`. Verify the candidate in the browser, switch the launchd NEXT_DIST_DIR and restart. Preserve the previous build, production metrics settings and data. Commit package.json and package-lock.json together. See [design system operations](docs/design-system.md) for details and validation history.
+
 ## Configuration
 
 Next.js loads project `.env` and `.env.local` at startup; `.env.local` takes precedence.

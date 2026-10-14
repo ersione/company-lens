@@ -45,6 +45,23 @@ npm run start -- --hostname 0.0.0.0 --port 3100
 필요하지만 CSV 적재 후에는 필요 없습니다. DB 교체 전에는 일관된 SQLite 백업을 만들고,
 새 DB를 별도 포트에서 검증하며 이전 DB·빌드는 복구용으로 보관합니다.
 
+## 공통 디자인 시스템
+
+현재 `@ersione/design-system`은 `github:ersione/ersione-design-system#v0.5.1`로 고정합니다. 공통 메뉴·현재 위치·폼 컨트롤·차트 테마·수치 강조를 사용하며, 최근 고용 흐름은 DataPanel / DataBadge / DataHighlight로 표현합니다. 인원=블루, 금액·취득=틸, 상실=오렌지, 변동=퍼플은 Company Lens의 매핑입니다.
+
+업데이트는 새 태그를 지정해 설치한 뒤 검증·빌드·배포합니다. 인자 없는 npm install은 현재 lockfile 버전을 다시 설치합니다.
+
+```sh
+# v0.5.1을 선택한 새 릴리스 태그로 교체
+npm install github:ersione/ersione-design-system#v0.5.1
+npm run typecheck
+npm test
+NEXT_DIST_DIR=.next-candidate npm run build
+METRICS_DISABLED=1 NEXT_DIST_DIR=.next-candidate npm run start -- --hostname 127.0.0.1 --port 3101
+```
+
+운영 서비스는 현재 `.next-soft-v051`을 사용합니다. 후보 브라우저 검증 후 launchd의 NEXT_DIST_DIR을 전환하고 재시작합니다. 실행 중인 빌드·통계 설정·데이터 파일을 덮어쓰지 않습니다. package.json과 package-lock.json을 함께 커밋합니다. 상세 절차와 검증 기록은 [디자인 시스템 운영 문서](docs/design-system.md)를 참고하세요.
+
 ## 설정
 
 Next.js는 시작할 때 프로젝트 `.env`와 `.env.local`을 읽으며 `.env.local`이 우선합니다.

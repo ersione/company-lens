@@ -1,5 +1,7 @@
 # Ersione 디자인 시스템 적용
 
+현재 설치: `github:ersione/ersione-design-system#v0.5.1`.
+
 공통 패키지: `@ersione/design-system`, 저장소: https://github.com/ersione/ersione-design-system.
 소비 버전은 package.json과 package-lock.json의 Git 커밋으로 고정합니다.
 
@@ -16,7 +18,7 @@
 
 1. 디자인 시스템 저장소에서 소스를 수정하고 build/check/test/test:browser를 실행합니다.
 2. 검증한 커밋을 Git에 push합니다.
-3. 이 저장소에서 `npm install github:ersione/ersione-design-system#<commit-sha>`로 고정 버전을 갱신합니다.
+3. 이 저장소에서 `npm install github:ersione/ersione-design-system#<new-tag>` (또는 검증한 SHA)로 고정 버전을 갱신합니다.
 4. `npm run typecheck`, `npm test`, 별도 NEXT_DIST_DIR의 build와 브라우저 테스트를 실행합니다.
 5. 운영 서비스가 사용하는 빌드 디렉터리를 확인한 뒤 검증한 후보를 배포합니다. 실행 중인 빌드 위에 덮어쓰지 않습니다.
 
