@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import type { Distribution } from "@/db/schema";
 import { refreshCompanyBenchmarks } from "@/lib/company-benchmarks";
 import { refreshCompanyLatest } from "@/lib/company-latest";
+import { refreshPublicStatistics } from "@/lib/public-statistics";
 
 export function refreshMonthlyStatistics(sqlite: Database.Database, month: string, options: { refreshDerived?: boolean } = {}) {
   const source = sqlite.prepare(`SELECT id FROM source_files WHERE snapshot_month = ?
@@ -34,6 +35,7 @@ export function refreshMonthlyStatistics(sqlite: Database.Database, month: strin
       industry_distribution = excluded.industry_distribution, size_distribution = excluded.size_distribution,
       generated_at = excluded.generated_at`).run({ ...totals, month, sourceId: source.id,
         industries: JSON.stringify(industries), sizes: JSON.stringify(sizes), now: new Date().toISOString() });
+  refreshPublicStatistics(sqlite, month);
   if (options.refreshDerived !== false) {
     refreshCompanyBenchmarks(sqlite, month);
     refreshCompanyLatest(sqlite, month);

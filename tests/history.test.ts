@@ -12,6 +12,7 @@ import { getCompanyDetail, getCompanyHistory, getStatisticsOverview, searchCompa
 import { rebuildCompanyLatest } from "@/lib/company-latest";
 import { fillHistoryMonths } from "@/lib/history-series";
 import { parseArchiveList } from "@/lib/nps-archive";
+import { getStatisticsHistory, getYearlyStatistics } from "@/lib/public-statistics";
 
 test("legacy compressed history keeps latest metadata, canonical revisions and persisted statistics", async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "company-lens-history-"));
@@ -47,6 +48,8 @@ test("legacy compressed history keeps latest metadata, canonical revisions and p
     assert.equal(getCompanyHistory(company.id).length, 2);
     assert.equal(getCompanyDetail(company.id)?.employeeCount, 25);
     assert.equal(getStatisticsOverview()?.subscriberCount, 25);
+    assert.equal(getStatisticsHistory("total", "전국").at(-1)?.subscriberCount, 25);
+    assert.equal(getYearlyStatistics("total", "전국")[0].endSubscriberCount, 25);
     assert.equal(searchCompanies("히스토리회사")[0].employeeCount, 25);
     const compressed = write("duplicate.csv.gz", "202608", "새 업종", 25, true);
     const bytes = iconv.encode(`${requiredColumns.join(",")}\n202608,히스토리회사,123456,1,서울시 강남구,,새 업종,25,950000,2,1\n202608,탈퇴회사,654321,2,서울시 중구,,기타,99,950000,0,0\n`, "utf-8");

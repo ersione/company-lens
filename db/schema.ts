@@ -104,6 +104,39 @@ export type CompanySnapshot = typeof companySnapshots.$inferSelect;
 export type SourceFile = typeof sourceFiles.$inferSelect;
 
 export type Distribution = { label: string; workplaceCount: number; subscriberCount: number };
+export const employmentMonthlyCube = sqliteTable("employment_monthly_cube", {
+  snapshotMonth: text("snapshot_month").notNull(), industry: text("industry").notNull(),
+  region: text("region").notNull(), sizeBand: integer("size_band").notNull(),
+  sourceFileId: integer("source_file_id").notNull().references(() => sourceFiles.id),
+  workplaceCount: integer("workplace_count").notNull(), subscriberCount: integer("subscriber_count").notNull(),
+  unknownEmployeeCount: integer("unknown_employee_count").notNull(), newJoiners: integer("new_joiners").notNull(),
+  departures: integer("departures").notNull(), unknownJoinerCount: integer("unknown_joiner_count").notNull(),
+  unknownDepartureCount: integer("unknown_departure_count").notNull(), salaryWorkplaceCount: integer("salary_workplace_count").notNull(),
+  salarySubscriberCount: integer("salary_subscriber_count").notNull(), salaryBilledAmount: integer("salary_billed_amount").notNull(),
+  generatedAt: text("generated_at").notNull()
+}, (table) => [primaryKey({ columns: [table.snapshotMonth, table.industry, table.region, table.sizeBand] })]);
+export const employmentCubeMonths = sqliteTable("employment_cube_months", {
+  snapshotMonth: text("snapshot_month").primaryKey(), sourceFileId: integer("source_file_id").notNull().references(() => sourceFiles.id),
+  generatedAt: text("generated_at").notNull(), cubeRowCount: integer("cube_row_count").notNull()
+});
+export const publicYearlyStatistics = sqliteTable("public_yearly_statistics", {
+  dimension: text("dimension").notNull(), dimensionKey: text("dimension_key").notNull(), year: text("year").notNull(),
+  firstMonth: text("first_month").notNull(), lastMonth: text("last_month").notNull(), monthCount: integer("month_count").notNull(),
+  averageWorkplaceCount: real("average_workplace_count").notNull(), averageSubscriberCount: real("average_subscriber_count").notNull(),
+  endWorkplaceCount: integer("end_workplace_count").notNull(), endSubscriberCount: integer("end_subscriber_count").notNull(),
+  newJoiners: integer("new_joiners").notNull(), departures: integer("departures").notNull(),
+  salarySubscriberMonths: integer("salary_subscriber_months").notNull(), annualSalary: real("annual_salary"), generatedAt: text("generated_at").notNull()
+}, (table) => [primaryKey({ columns: [table.dimension, table.dimensionKey, table.year] })]);
+export const publicMonthlyStatistics = sqliteTable("public_monthly_statistics", {
+  dimension: text("dimension").notNull(), dimensionKey: text("dimension_key").notNull(),
+  snapshotMonth: text("snapshot_month").notNull(),
+  sourceFileId: integer("source_file_id").notNull().references(() => sourceFiles.id),
+  workplaceCount: integer("workplace_count").notNull(), subscriberCount: integer("subscriber_count").notNull(),
+  unknownEmployeeCount: integer("unknown_employee_count").notNull(), newJoiners: integer("new_joiners").notNull(),
+  departures: integer("departures").notNull(), salarySubscriberCount: integer("salary_subscriber_count").notNull(),
+  annualSalary: real("annual_salary"), generatedAt: text("generated_at").notNull()
+}, (table) => [primaryKey({ columns: [table.dimension, table.dimensionKey, table.snapshotMonth] }),
+  index("public_statistics_month_idx").on(table.dimension, table.snapshotMonth, sql`${table.subscriberCount} DESC`)]);
 export const companyBenchmarks = sqliteTable("company_benchmarks", {
   companyId: integer("company_id").primaryKey().references(() => companies.id, { onDelete: "cascade" }),
   snapshotMonth: text("snapshot_month").notNull(),

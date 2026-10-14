@@ -5,6 +5,9 @@
 
 ## Unreleased
 
+- Add resumable month/industry/region/subscriber-size employment cubes, precomputed monthly/annual rollups and automatic canonical-source refresh. Publish employment trends and industry/region pages with Chart.js history, honest partial-year coverage and aggregation caveats. Sitemap includes statistics, not company detail pages.
+- Add industry growth/decline rankings using exact 1/3/12-month comparisons from monthly rollups; default to yearly headcount growth, with minimum-size safeguards for percentage rankings.
+
 - Default search to workplaces in the latest loaded month, with an explicit historical-workplace checkbox/API option and last-observed labels. Preserve historical detail/history and existing visibility/safety guards (OpenAPI 1.7.0). One-character searches remain unsupported.
 - Default web/API search ordering to latest subscriber count; retain optional relevance ordering with legal-form/whitespace-aware name ranking. Add an explicitly provisioned subscriber-count index to latest-company metrics (OpenAPI 1.6.0). One-character searches remain unsupported.
 - Exclude explicitly marked daily-worker workplaces on import; add isolated, verified removal of existing workplaces and their complete histories, refreshed statistics/benchmarks and compacted storage. Preserve ordinary names containing 일용 and original source provenance (OpenAPI 1.5.2).

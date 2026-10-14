@@ -5,6 +5,8 @@
 Search Korean workplaces using National Pension Service public data: subscriber counts,
 estimated salaries, employment history, industry/size benchmarks and up to three-workplace
 comparisons. Includes browser-local recent visits and a protected usage dashboard.
+Public monthly employment, industry and regional statistics include historical charts and annual summaries.
+Industry employment changes compare 1, 3 or 12 months, with growth/decline rankings by headcount or rate at `/employment-trends`.
 
 Search requires at least two characters and defaults to the latest loaded month, ordered
 by subscriber count. Historical workplaces are opt-in; missing latest data does not imply closure.
@@ -68,6 +70,7 @@ that bypass the backend are excluded. Recent visits stay in the browser.
 | Discover sources without downloading/importing | `npm run sync:nps-history -- --dry-run` |
 | Sync/resume; retain only the verified newest raw file | `npm run sync:nps-history -- --prune` |
 | Repair statistics / benchmarks | `npm run stats:rebuild` / `npm run benchmarks:rebuild` |
+| Build/resume public historical aggregates | `npm run stats:build-public` (`-- --force` rebuilds all months) |
 | Rebuild search after DB replacement/direct SQL edits | `npm run search:rebuild` then `npm run search:refresh-latest` |
 | Add subscriber-count index to an existing DB | `npm run search:index-employees` (no history rebuild) |
 | Add two-character index to an existing database | `npm run search:rebuild-short` |
@@ -93,6 +96,6 @@ Run `npm test`, `npm run typecheck` and an isolated `npm run build`. Browser che
 a running server, matching fixture data and Chromium: `npx playwright install chromium`,
 then `npm run test:browser` (`PLAYWRIGHT_BASE_URL` overrides the target).
 
-[API contract](docs/api.md) · [Metrics/auth details](docs/usage-metrics.md) · [Changelog](CHANGELOG.md)
+[API contract](docs/api.md) · [Public statistics](docs/public-statistics.md) · [Metrics/auth details](docs/usage-metrics.md) · [Changelog](CHANGELOG.md)
 
 Code: [MIT](LICENSE). Public data has separate [source usage conditions](https://www.data.go.kr/data/15083277/fileData.do); raw data is not distributed here.

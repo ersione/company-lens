@@ -20,6 +20,7 @@
     "search:refresh-latest": "tsx scripts/rebuild-company-latest.ts",
     "search:index-employees": "tsx scripts/index-company-employees.ts",
     "stats:rebuild": "tsx scripts/rebuild-statistics.ts",
+    "stats:build-public": "tsx scripts/build-public-statistics.ts",
     "benchmarks:rebuild": "tsx scripts/rebuild-benchmarks.ts",
     "db:compact": "tsx scripts/compact-database.ts",
     "db:verify": "tsx scripts/verify-compact-database.ts",

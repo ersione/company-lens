@@ -120,6 +120,9 @@ test("comparison supports search, add, remove and shared URLs on mobile and desk
     await page.setViewportSize({ width, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: `test-results/comparison-${width}.png`, fullPage: true });
+    const tableBounds = await page.locator(".comparison-scroll").boundingBox();
+    const noteBounds = await page.locator(".compare-page > .detail-caveat").boundingBox();
+    expect(noteBounds!.y - (tableBounds!.y + tableBounds!.height)).toBeGreaterThanOrEqual(17);
     if (width < 700) {
       const scroll = page.locator(".comparison-scroll");
       await scroll.evaluate((element) => { element.scrollLeft = element.scrollWidth; });

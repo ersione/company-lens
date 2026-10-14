@@ -15,10 +15,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko" suppressHydrationWarning>
       <body>
-        <header className="site-header">
+        <header className="site-header site-header-navigation">
           <Link href="/" className="brand"><ScanSearch size={25} aria-hidden="true" />Company Lens</Link>
-          <span className="header-description">기업 고용 데이터</span>
-          <Link href="/compare" className="header-compare">사업장 비교</Link>
+          <nav className="header-navigation" aria-label="주 메뉴">
+            <Link href="/">회사 검색</Link><Link href="/statistics">고용 동향</Link>
+            <Link href="/employment-trends">고용 변화</Link>
+            <Link href="/industries">업종별</Link><Link href="/regions">지역별</Link>
+            <Link href="/compare">사업장 비교</Link>
+          </nav>
           <span className="header-source"><Database size={14} aria-hidden="true" />국민연금 공개 데이터</span>
         </header>
         {children}

@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { createPublicStatisticsTable } from "@/lib/public-statistics";
 
 export function migrate(sqlite: Database.Database, options: { deferSnapshotIndexes?: boolean } = {}) {
   const existing = sqlite.prepare("PRAGMA table_info(company_snapshots)").all() as { name: string }[];
@@ -146,6 +147,7 @@ export function migrate(sqlite: Database.Database, options: { deferSnapshotIndex
       PRIMARY KEY (industry, size_band)
     ) WITHOUT ROWID;
   `);
+  createPublicStatisticsTable(sqlite);
   if (!options.deferSnapshotIndexes) createSnapshotIndexes(sqlite);
 }
 

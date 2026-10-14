@@ -5,6 +5,8 @@
 국민연금 공개 데이터로 회사를 검색하고 가입자 수, 추정 급여, 고용 이력,
 업종·가입자 규모별 비교 지표를 확인합니다. 최대 3개 사업장 비교, 브라우저별
 최근 방문 기록, 관리자용 이용 통계 화면을 제공합니다.
+월간 고용 동향·업종별·지역별 통계에서 월별 추이와 연간 요약을 확인할 수 있습니다.
+고용 변화(`/employment-trends`)에서는 전월·3개월·1년 대비 증가/감소 업종을 인원·비율순으로 비교합니다.
 
 검색은 두 글자 이상이며 기본은 최신 적재월·가입자 수순입니다. `과거 사업장 포함`으로
 이전 기록도 조회할 수 있으며, 최신 자료에 없다는 것이 폐업을 뜻하지는 않습니다.
@@ -68,6 +70,7 @@ Next.js는 시작할 때 프로젝트 `.env`와 `.env.local`을 읽으며 `.env.
 | 다운로드·적재 없이 수집 대상 확인 | `npm run sync:nps-history -- --dry-run` |
 | 수집 재개·갱신 후 검증된 최신 원본만 유지 | `npm run sync:nps-history -- --prune` |
 | 통계 / 비교 지표 복구 | `npm run stats:rebuild` / `npm run benchmarks:rebuild` |
+| 과거 공개 통계 최초 생성·재개 | `npm run stats:build-public` (전체 재생성은 `-- --force`) |
 | DB 교체·직접 SQL 수정 후 검색 재생성 | `npm run search:rebuild` 후 `npm run search:refresh-latest` |
 | 기존 DB에 가입자 수 보조 인덱스 추가 | `npm run search:index-employees` (전체 이력 재생성 없이) |
 | 기존 DB에 두 글자 보조 인덱스 추가 | `npm run search:rebuild-short` |
@@ -94,6 +97,6 @@ macOS 서비스는 사용자 로그인 시 시작됩니다. 수집 등록에는 
 `npx playwright install chromium` 후 `npm run test:browser`를 실행합니다.
 다른 주소는 `PLAYWRIGHT_BASE_URL`로 지정합니다.
 
-[API 명세](docs/api.md) · [메트릭·인증 상세](docs/usage-metrics.md) · [변경 이력](CHANGELOG.md)
+[API 명세](docs/api.md) · [공개 통계 기준](docs/public-statistics.md) · [메트릭·인증 상세](docs/usage-metrics.md) · [변경 이력](CHANGELOG.md)
 
 코드는 [MIT 라이선스](LICENSE)입니다. 공개 데이터는 별도의 [원본 이용 조건](https://www.data.go.kr/data/15083277/fileData.do)을 따르며 이 저장소에 배포하지 않습니다.
