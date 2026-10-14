@@ -1,12 +1,12 @@
 /* Host layout and product-specific density. Shared controls live in the package. */
 .eds-theme { --panel: var(--surface); --ink: var(--text); --accent-dark: var(--accent); font-size: 14px; }
-.site-header.site-header-navigation { background: var(--surface); border-top: 0; min-height: 84px; padding-block: 16px; }
-.site-header .brand { color: var(--text); gap: 12px; flex-shrink: 0; }
-.site-header .brand > span { color: var(--text); font-size: 20px; font-weight: 700; letter-spacing: -.6px; }
-.site-header .brand small { display: block; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: var(--muted); }
+.site-header.site-header-navigation { background: var(--surface); border-top: 0; min-height: 60px; padding-block: 10px; }
+.site-header .brand { color: var(--text); gap: 10px; flex-shrink: 0; }
+.site-header .brand > span { color: var(--text); font-size: 19px; font-weight: 700; letter-spacing: -.6px; }
 .header-navigation { gap: 16px; font-size: 13px; }
-.header-navigation a { color: var(--muted); }
+.header-navigation a { color: var(--muted); padding-block: 4px; }
 .header-navigation a:hover { color: var(--accent); }
+.header-navigation a:focus-visible { outline-offset: -2px; border-radius: var(--radius-sm); }
 .page-shell { padding-top: 40px; }
 .search-heading h1 { font-size: 36px; letter-spacing: -1px; }
 .search-heading .eyebrow { font-size: 11px; letter-spacing: 1.8px; }
@@ -73,7 +73,7 @@
 .employment-segments a[aria-current] { background: var(--surface); color: var(--accent); box-shadow: none; }
 .employment-summary { border-top-color: var(--data-people); background: var(--data-people-tint); border-radius: var(--radius-card); }
 @media(max-width: 860px) {
-  .site-header.site-header-navigation { padding: 16px 18px 12px; gap: 12px; }
+  .site-header.site-header-navigation { padding: 10px 18px 8px; gap: 8px; }
   .page-shell { padding-top: 28px; }
   .search-heading h1 { font-size: 28px; }
   .company-search-form { padding: 16px; }
@@ -83,7 +83,7 @@
   .search-filters { gap: 10px; }
 }
 @media(max-width: 600px) {
-  .header-navigation { width: 100%; gap: 8px 14px; font-size: 12px; }
+  .header-navigation { width: 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; gap: 16px; font-size: 12px; margin-left: 0; padding-bottom: 4px; scrollbar-width: thin; }
   .search-form { grid-template-columns: minmax(0, 1fr) 76px; gap: 8px; }
   .search-form .eds-input { font-size: 14px; padding-left: 36px; padding-right: 8px; }
   .search-input-icon { left: 12px; width: 18px; }

@@ -5,6 +5,8 @@
 
 ## Unreleased
 
+- Theme expanded select menus with Ersione v0.2.1, compact the desktop header to 60px, remove the redundant brand attribution and keep mobile navigation on one scrollable row.
+
 - Adopt the Git-pinned Ersione design-system package for shared React controls, semantic data colors, unified metrics, source tables and brand styling. Keep domain data and search behavior in Company Lens.
 
 - Add resumable month/industry/region/subscriber-size employment cubes, precomputed monthly/annual rollups and automatic canonical-source refresh. Publish employment trends and industry/region pages with Chart.js history, honest partial-year coverage and aggregation caveats. Sitemap includes statistics, not company detail pages.

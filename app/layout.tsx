@@ -20,7 +20,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko" suppressHydrationWarning>
       <body className="eds-theme" data-brand="blue" data-dark="false">
         <header className="site-header site-header-navigation">
-          <Link href="/" className="brand"><Image src={ersioneSymbol} alt="" width={36} height={36} /><span>Company Lens<small>BY ERSIONE</small></span></Link>
+          <Link href="/" className="brand"><Image src={ersioneSymbol} alt="" width={30} height={30} /><span>Company Lens</span></Link>
           <nav className="header-navigation" aria-label="주 메뉴">
             <Link href="/">회사 검색</Link><Link href="/statistics">고용 동향</Link>
             <Link href="/employment-trends">고용 변화</Link>
