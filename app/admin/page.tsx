@@ -12,7 +12,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "관리자 | Company Lens", robots: { index: false, follow: false },
   openGraph: { title: "Company Lens 관리자", description: "관리자 전용 페이지" }, twitter: { title: "Company Lens 관리자", description: "관리자 전용 페이지" } };
-const colors = ["#0f766e", "#3675cf", "#b57423", "#b35070", "#6d63ab", "#258f8a", "#8793a1"];
+const colors = [0, 1, 2, 3, 4];
+const sizeColors = ["neutral", 0, 1, 2, 3, 4, "ink"] as const;
 const number = (n: number) => n.toLocaleString("ko-KR");
 const ms = (n: number | null) => n === null ? "-" : `${number(Math.round(n))}ms`;
 
@@ -55,8 +56,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         {!data.companies.length && <p className="admin-empty">사업장 조회 기록이 없습니다.</p>}
       </section>
       <section className="admin-tool admin-wide"><div className="admin-tool-heading"><h2><Users size={18} />가입자 규모별 조회 추이</h2><span>{number(totalViews)}건</span></div>
-        <AdminChart title="가입자 규모별 일별 상세 조회" labels={labels} kind="bar" stacked series={data.sizes.map((row, i) => ({ label: row.label, values: row.values, color: colors[i] }))} />
-        <div className="admin-size-shares">{data.sizes.map((row, i) => <div key={row.band}><span><i style={{ backgroundColor: colors[i] }} />{row.label}</span><strong>{totalViews ? (row.total / totalViews * 100).toFixed(1) : "0.0"}%</strong><small>{number(row.total)}건</small></div>)}</div>
+        <AdminChart title="가입자 규모별 일별 상세 조회" labels={labels} kind="bar" stacked series={data.sizes.map((row, i) => ({ label: row.label, values: row.values, color: sizeColors[i] }))} />
+        <div className="admin-size-shares">{data.sizes.map((row, i) => <div key={row.band}><span><i style={{ backgroundColor: row.band === "0" ? "var(--muted)" : row.band === "unknown" ? "var(--text)" : `var(--chart-series-${i})` }} />{row.label}</span><strong>{totalViews ? (row.total / totalViews * 100).toFixed(1) : "0.0"}%</strong><small>{number(row.total)}건</small></div>)}</div>
         <p className="admin-footnote">조회 당시 국민연금 가입자 규모 · 법적 기업 규모 분류와 무관 · 사업장 순위의 규모·기준월은 조회가 가장 많았던 관측값</p>
       </section>
       <section className="admin-tool"><div className="admin-tool-heading"><h2><Clock3 size={18} />서버 처리시간</h2><span>ms</span></div>
@@ -65,7 +66,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         ]} /></section>
       <section className="admin-tool"><div className="admin-tool-heading"><h2><ShieldCheck size={18} />오류 추이</h2><span>4xx {number(data.totals.errors4xx)} · 5xx {number(data.totals.errors5xx)}</span></div>
         <AdminChart title="일별 HTTP 4xx 및 5xx 오류" labels={labels} kind="bar" series={[
-          { label: "요청 오류 (4xx)", values: data.errors.client, color: colors[2] }, { label: "서버 오류 (5xx)", values: data.errors.server, color: colors[3] }
+          { label: "요청 오류 (4xx)", values: data.errors.client, color: "warning" }, { label: "서버 오류 (5xx)", values: data.errors.server, color: "error" }
         ]} /></section>
     </div>
     <p className="admin-footnote">고유 방문자가 아닌 백엔드 처리 요청 기준 · 캐시 응답·상태 점검 제외 · p95는 구간 기반 상한 · 최근 90일 보관</p>

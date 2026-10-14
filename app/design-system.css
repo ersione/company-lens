@@ -3,13 +3,7 @@
 .site-header.site-header-navigation { background: var(--surface); border-top: 0; min-height: 60px; padding-block: 10px; }
 .site-header .brand { color: var(--text); gap: 10px; flex-shrink: 0; }
 .site-header .brand > span { color: var(--text); font-size: 19px; font-weight: 700; letter-spacing: -.6px; }
-.header-navigation { gap: 4px; font-size: 13px; }
-.header-navigation a { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; color: var(--muted); padding: 8px 10px; border: 1px solid transparent; border-radius: var(--radius-md); }
-.header-navigation a:hover { background: var(--tint); }
-.header-navigation a[aria-current="page"] { color: var(--accent); background: var(--tint); border-color: var(--line); font-weight: 700; }
-.header-navigation svg { flex-shrink: 0; }
-.header-navigation a:hover { color: var(--accent); }
-.header-navigation a:focus-visible { outline-offset: -2px; border-radius: var(--radius-sm); }
+.header-navigation { margin-left: auto; }
 .page-shell { padding-top: 40px; }
 .search-heading h1 { font-size: 36px; letter-spacing: -1px; }
 .search-heading .eyebrow { font-size: 11px; letter-spacing: 1.8px; }
@@ -59,8 +53,8 @@
 .movement-metric .eds-metric__label svg { background: var(--data-flow-tint); }
 .detail-metric .metric-secondary strong { color: var(--metric-color); }
 .metric-comparison[data-direction="up"] strong, .metric-comparison[data-direction="down"] strong { color: var(--data-flow); }
-.movement-breakdown .joiners dd { color: var(--data-people); }
-.movement-breakdown .departures dd { color: var(--data-flow); }
+.movement-breakdown .joiners dd { color: var(--data-joiners); }
+.movement-breakdown .departures dd { color: var(--data-departures); }
 .history-table.eds-table-container { margin-top: 16px; }
 .eds-table th:first-child, .eds-table td:first-child { text-align: left; }
 .compare-action, .statistics-back, .company-connections a:hover { color: var(--accent); }
@@ -75,7 +69,7 @@
 .statistics-table tbody tr:hover { background: var(--tint); }
 .employment-overview { border-top: 0; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); }
 .employment-segments a[aria-current] { background: var(--surface); color: var(--accent); box-shadow: none; }
-.employment-summary { border-top-color: var(--data-people); background: var(--data-people-tint); border-radius: var(--radius-card); }
+
 @media(max-width: 860px) {
   .site-header.site-header-navigation { padding: 10px 18px 8px; gap: 8px; }
   .page-shell { padding-top: 28px; }
@@ -88,7 +82,7 @@
 }
 @media(max-width: 600px) {
   .header-navigation { width: 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; gap: 4px; font-size: 12px; margin-left: 0; padding-bottom: 4px; scrollbar-width: thin; }
-  .header-navigation a { padding-block: 6px; }
+  .header-navigation .eds-navigation__link { padding-block: 6px; font-size: 12px; }
   .search-form { grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; }
   .search-form .eds-input { font-size: 14px; padding-left: 36px; padding-right: 8px; }
   .search-input-icon { left: 12px; width: 18px; }
@@ -107,3 +101,25 @@
 .employment-trends, .employment-trends.employment-declining { --movement: var(--data-flow); }
 
 button.filter-reset { border: 0; padding: 0; background: transparent; color: var(--accent); cursor: pointer; font: inherit; font-size: 13px; }
+
+/* Product layout only: navigation, panels, value styles and colors come from EDS. */
+.employment-summary .insight-heading { color: var(--data-primary); }
+.employment-summary .insight-heading h2 { color: var(--text); }
+.employment-summary .employment-narrative { color: var(--text); font-weight: 500; }
+.employment-summary-grid { gap: 16px; }
+.employment-summary-grid > div { background: var(--bg); }
+.employment-summary-grid > div > span, .employment-summary .employment-long-term > div > span { color: var(--muted); }
+.employment-summary .employment-summary-grid > div > small, .employment-summary .employment-long-term p { color: var(--muted); }
+.employment-summary .employment-long-term { border-color: var(--line); }
+.employment-summary .annual-movement dd { margin: 0; }
+
+/* Company Lens owns these domain choices; other products may map differently. */
+.eds-theme {
+  --data-people: var(--palette-blue); --data-people-tint: var(--palette-blue-tint);
+  --data-salary: var(--palette-teal); --data-salary-tint: var(--palette-teal-tint);
+  --data-joiners: var(--palette-teal); --data-joiners-tint: var(--palette-teal-tint);
+  --data-departures: var(--palette-amber); --data-departures-tint: var(--palette-amber-tint);
+  --data-flow: var(--palette-amber); --data-flow-tint: var(--palette-amber-tint);
+}
+
+.three-year-summary { display: flex; flex-direction: column; align-items: flex-start; }

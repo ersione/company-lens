@@ -37,6 +37,8 @@ test("admin guards HTML/RSC, requires both credentials, renders charts and logs 
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   await expect(page.getByRole("heading", { name: "서비스 이용 통계" })).toBeVisible();
   await expect(page.locator('.admin-chart[data-ready="true"]')).toHaveCount(6);
+  const sizeColors = await page.locator('.admin-size-shares i').evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundColor));
+  expect(new Set(sizeColors).size).toBe(7);
   const cookie = (await context.cookies()).find((row) => row.name === "company_lens_admin")!;
   expect(cookie.httpOnly).toBe(true);
   expect(cookie.sameSite).toBe("Strict");

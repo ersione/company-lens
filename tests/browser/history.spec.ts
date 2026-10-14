@@ -21,7 +21,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
       const bytes = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
       let colored = 0;
       for (let i = 0; i < bytes.length; i += 4) {
-        if (bytes[i + 3] > 0 && bytes[i + 1] > bytes[i] + 20 && bytes[i + 1] > bytes[i + 2]) colored++;
+        if (bytes[i + 3] > 0 && bytes[i + 2] > bytes[i] + 20 && bytes[i + 2] > bytes[i + 1]) colored++;
       }
       return colored;
     });

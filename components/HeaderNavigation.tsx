@@ -1,5 +1,6 @@
 "use client";
 
+import { Navigation, NavigationLink } from "@ersione/design-system/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, ChartNoAxesCombined, TrendingUpDown, Layers3, MapPin, GitCompareArrows } from "lucide-react";
@@ -15,14 +16,12 @@ const items = [
 
 export function HeaderNavigation() {
   const pathname = usePathname();
-  return <nav className="header-navigation" aria-label="주 메뉴">
+  return <Navigation className="header-navigation" aria-label="주 메뉴">
     {items.map(({ href, label, icon: Icon }) => {
       const active = href === "/"
         ? pathname === "/" || pathname.startsWith("/companies/")
         : pathname === href || pathname.startsWith(`${href}/`);
-      return <Link key={href} href={href} aria-current={active ? "page" : undefined}>
-        <Icon size={15} aria-hidden="true" /><span>{label}</span>
-      </Link>;
+      return <NavigationLink as={Link} key={href} href={href} active={active} icon={<Icon aria-hidden="true" />}>{label}</NavigationLink>;
     })}
-  </nav>;
+  </Navigation>;
 }

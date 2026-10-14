@@ -129,25 +129,22 @@ strong.employment-change { display: inline-flex; align-items: center; gap: 4px; 
 .header-compare + .header-source { margin-left: 8px; }
 .detail-navigation { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .compare-action { display: inline-flex; align-items: center; gap: 8px; color: #0f766e; font-weight: 700; padding: 9px 12px; border: 1px solid #badbd5; border-radius: 6px; background: #f1faf6; }
-.employment-summary { border-top: 3px solid #277c98; background: #f3f8fb; padding: 24px; margin: 24px 0 36px; }
+.employment-summary { margin: 24px 0 36px; }
 .insight-heading { display: flex; gap: 10px; align-items: center; color: #245b70; margin-bottom: 18px; }
 .insight-heading h2 { font-size: 20px; margin: 0; color: #1b3039; }
 .employment-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .employment-summary-grid > div { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-.employment-summary-grid span { color: #526477; font-size: 14px; }
-.employment-summary-grid strong { font-size: 23px; color: #245b70; overflow-wrap: anywhere; }
-.employment-summary-grid small { color: #667085; font-size: 13px; }
+.employment-summary-grid > div > span { color: var(--muted); font-size: 14px; }
+.employment-summary-grid > div > small { color: var(--muted); font-size: 13px; }
 .employment-narrative { font-size: 17px; font-weight: 600; color: #245b70; margin: 0 0 24px; }
 .employment-long-term { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; border-top: 1px solid #d9e5ec; margin-top: 24px; padding-top: 24px; }
 .employment-long-term > div { min-width: 0; }
-.employment-long-term span, .cohort-description { color: #526477; font-size: 15px; }
-.three-year-summary > strong { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; color: #245b70; font-size: 28px; margin-top: 8px; }
-.three-year-summary strong small { font-size: 18px; }
+.employment-long-term > div > span, .cohort-description { color: #526477; font-size: 15px; }
+.three-year-summary > strong { margin-top: 8px; }
 .employment-long-term p { color: #526477; font-size: 14px; line-height: 1.7; margin: 10px 0 0; }
 .annual-movement dl { display: flex; flex-wrap: wrap; gap: 28px; margin: 10px 0 0; }
 .annual-movement dt { font-size: 14px; color: #526477; }
-.annual-movement dd { margin: 4px 0 0; font-size: 24px; font-weight: 700; color: #146c63; }
-.annual-movement div + div dd { color: #a05f27; }
+.annual-movement dd { margin: 4px 0 0; }
 .size-cohort { margin: 32px 0; padding: 26px 0; border-top: 2px solid #0f766e; border-bottom: 1px solid var(--line); }
 .cohort-description { margin: -4px 0 20px; overflow-wrap: anywhere; }
 .cohort-comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
