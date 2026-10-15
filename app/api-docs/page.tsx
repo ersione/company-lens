@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft, FileJson, ExternalLink } from "lucide-react";
 import { openApiDocument } from "@/lib/openapi";
+import { socialMetadata } from "@/lib/social-metadata";
 
-export const metadata = { title: "API 문서 | Company Lens" };
+export const metadata = socialMetadata("API 문서 | Company Lens", "국민연금 사업장 검색·고용 이력·통계를 조회하는 Company Lens 읽기 전용 API. 매개변수, 응답 기준과 호출 예제를 확인하세요.", "/api-docs");
 
 export default function ApiDocsPage() {
   return <main className="page-shell api-docs-page">

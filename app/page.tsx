@@ -13,10 +13,15 @@ import Link from "next/link";
 import { CalendarDays, ShieldCheck, CircleAlert } from "lucide-react";
 import { observeWebPage } from "@/lib/observe-usage";
 import type { UsageEvent } from "@/lib/usage-metrics";
+import { homeMetadata, websiteStructuredData } from "@/lib/social-metadata";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export async function generateMetadata({ searchParams }: PageProps) {
+  return homeMetadata(await searchParams ?? {});
+}
 
 async function Home({ searchParams }: PageProps, usage: UsageEvent) {
   const params = await searchParams;
@@ -44,6 +49,7 @@ async function Home({ searchParams }: PageProps, usage: UsageEvent) {
 
   return (
     <main className={`page-shell${searchMode ? " search-results-view" : ""}`}>
+      {!searchMode && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteStructuredData).replace(/</g, "\\u003c") }} />}
       <section className="search-section">
         {!searchMode && <div className="search-heading">
           <div>

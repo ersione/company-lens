@@ -17,6 +17,17 @@
 
 **기술:** Next.js, TypeScript, Tailwind CSS, SQLite/Drizzle, Chart.js. Node.js 22 이상과 npm이 필요합니다.
 
+## 검색 노출
+
+공개 화면은 서버에서 본문을 렌더링하고 페이지별 대표 URL·공유 메타데이터를 제공합니다.
+메인에는 WebSite JSON-LD를 넣습니다. 내부 검색 결과와 잘못된 검색 조건은
+`noindex, follow`로 색인을 제외하되 회사 링크는 따라갈 수 있게 합니다.
+API 문서는 고유 대표 URL과 사이트맵 항목을 갖습니다. 회사 상세 중 최신 대표 적재월에 가입자가 50명 이상인 사업장은
+`/sitemap-index.xml` 아래 ID 구간별 사이트맵에 넣습니다(파일당 최대 10,000개).
+과거에만 존재하거나 가입자가 50명 미만·누락인 사업장은 사이트맵에서 제외하되 상세 URL은 유지합니다.
+최신 회사 검색 인덱스가 먼저 준비되어 있어야 하며 페이지 요청에서 인덱스를 만들지 않습니다. 관리자·비교 화면도 색인 제외입니다.
+사이트맵 HTTP 200과 Google 색인은 별개이므로 Search Console에서 수집·색인을 확인하세요.
+
 ## 실행
 
 ```sh
@@ -61,7 +72,7 @@ NEXT_DIST_DIR=.next-candidate npm run build
 METRICS_DISABLED=1 NEXT_DIST_DIR=.next-candidate npm run start -- --hostname 127.0.0.1 --port 3101
 ```
 
-운영 서비스는 현재 `.next-soft-v051`을 사용합니다. 후보 브라우저 검증 후 launchd의 NEXT_DIST_DIR을 전환하고 재시작합니다. 실행 중인 빌드·통계 설정·데이터 파일을 덮어쓰지 않습니다. package.json과 package-lock.json을 함께 커밋합니다. 상세 절차와 검증 기록은 [디자인 시스템 운영 문서](docs/design-system.md)를 참고하세요.
+운영 서비스는 현재 `.next-seo-20261016b`을 사용합니다. 후보 브라우저 검증 후 launchd의 NEXT_DIST_DIR을 전환하고 재시작합니다. 실행 중인 빌드·통계 설정·데이터 파일을 덮어쓰지 않습니다. package.json과 package-lock.json을 함께 커밋합니다. 상세 절차와 검증 기록은 [디자인 시스템 운영 문서](docs/design-system.md)를 참고하세요.
 
 ## 설정
 

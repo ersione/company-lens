@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { companySocialMetadata, publicOrigin, siteTitle, siteDescription, socialImageAlt, socialMetadata } from "../lib/social-metadata";
+import { homeMetadata, websiteStructuredData, companySocialMetadata, publicOrigin, siteTitle, siteDescription, socialImageAlt, socialMetadata } from "../lib/social-metadata";
 import type { CompanyDetail } from "../lib/company-queries";
 
 const company: CompanyDetail = {
@@ -38,4 +38,16 @@ test("home preview uses the fixed public origin and shared image", () => {
   assert.equal(metadata.twitter?.description, metadata.description);
   assert.equal(metadata.alternates?.canonical, "/");
   assert.deepEqual(metadata.openGraph?.images, [{ url: "/opengraph-image", width: 1200, height: 630, alt: socialImageAlt }]);
+});
+
+
+test("search states are noindex while home and tracking parameters remain indexable", () => {
+  for (const params of [{ q: "삼성" }, { q: "a" }, { q: ["삼성", "엘지"] }, { page: "oops" }]) {
+    assert.deepEqual(homeMetadata(params).robots, { index: false, follow: true });
+  }
+  for (const params of [{}, { q: "" }, { utm_source: "share" }]) {
+    assert.equal(homeMetadata(params).robots, undefined);
+  }
+  assert.equal(homeMetadata({ q: "삼성" }).title, "삼성 검색 결과 | Company Lens");
+  assert.equal(websiteStructuredData.url, `${publicOrigin}/`);
 });

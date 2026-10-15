@@ -17,6 +17,17 @@ Explicit daily-worker workplaces (e.g. `/일용/`, `(일용)`, `건설일용관�
 
 **Stack:** Next.js, TypeScript, Tailwind CSS, SQLite/Drizzle, Chart.js. Requires Node.js 22+ and npm.
 
+## Search discovery
+
+Public pages render their content on the server and expose canonical URLs, page-specific
+social metadata and a home-page WebSite JSON-LD entry. Internal search results and invalid
+searches use `noindex, follow`; the home page remains indexable. API documentation has its
+own canonical URL and sitemap entry. Company pages with at least 50 subscribers in the latest canonical month are included
+in stable ID-range sitemaps (at most 10,000 URLs each), listed by `/sitemap-index.xml`.
+Historical-only, below-threshold and missing-count records are excluded from these sitemaps;
+their detail URLs still work. The latest-company search index must already be provisioned. Admin and comparison pages are noindex.
+A successful sitemap response does not prove Google indexing; monitor Search Console separately.
+
 ## Run
 
 ```sh
@@ -61,7 +72,7 @@ NEXT_DIST_DIR=.next-candidate npm run build
 METRICS_DISABLED=1 NEXT_DIST_DIR=.next-candidate npm run start -- --hostname 127.0.0.1 --port 3101
 ```
 
-Production currently uses `.next-soft-v051`. Verify the candidate in the browser, switch the launchd NEXT_DIST_DIR and restart. Preserve the previous build, production metrics settings and data. Commit package.json and package-lock.json together. See [design system operations](docs/design-system.md) for details and validation history.
+Production currently uses `.next-seo-20261016b`. Verify the candidate in the browser, switch the launchd NEXT_DIST_DIR and restart. Preserve the previous build, production metrics settings and data. Commit package.json and package-lock.json together. See [design system operations](docs/design-system.md) for details and validation history.
 
 ## Configuration
 
