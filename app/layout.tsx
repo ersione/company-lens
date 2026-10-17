@@ -12,7 +12,15 @@ import { publicOrigin, siteTitle, siteDescription, socialMetadata } from "@/lib/
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicOrigin),
-  ...socialMetadata(siteTitle, siteDescription, "/")
+  ...socialMetadata(siteTitle, siteDescription, "/"),
+  icons: {
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32 48x48" },
+      { url: "/favicon-96.png", type: "image/png", sizes: "96x96" },
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" }
+    ],
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }]
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
